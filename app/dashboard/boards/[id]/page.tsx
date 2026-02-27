@@ -249,8 +249,8 @@ export default function BoardDetailPage({ params }: PageProps) {
         {
           type: "assignee",
           user_id: member.user_id,
-          name: member.profiles.full_name,
-          avatar_url: member.profiles.avatar_url,
+          name: member.profiles?.full_name || "Member",
+          avatar_url: member.profiles?.avatar_url || null,
         },
       ];
     }
@@ -352,9 +352,9 @@ export default function BoardDetailPage({ params }: PageProps) {
               <div
                 key={i}
                 className="w-8 h-8 rounded-full border-2 border-white bg-gradient-to-br from-blue-100 to-purple-100 flex items-center justify-center overflow-hidden shadow-sm"
-                title={m.profiles.full_name}
+                title={m.profiles?.full_name || "Member"}
               >
-                {m.profiles.avatar_url ? (
+                {m.profiles?.avatar_url ? (
                   <img
                     src={m.profiles.avatar_url}
                     alt="avatar"
@@ -362,7 +362,7 @@ export default function BoardDetailPage({ params }: PageProps) {
                   />
                 ) : (
                   <span className="text-[10px] font-bold text-gray-600">
-                    {m.profiles.full_name?.charAt(0) || "U"}
+                    {m.profiles?.full_name?.charAt(0) || "U"}
                   </span>
                 )}
               </div>
@@ -601,7 +601,7 @@ export default function BoardDetailPage({ params }: PageProps) {
                                                 >
                                                   <div className="w-7 h-7 rounded-full border border-gray-100 bg-gradient-to-br from-blue-50 to-indigo-50 overflow-hidden flex items-center justify-center">
                                                     {member.profiles
-                                                      .avatar_url ? (
+                                                      ?.avatar_url ? (
                                                       <img
                                                         src={
                                                           member.profiles
@@ -611,14 +611,15 @@ export default function BoardDetailPage({ params }: PageProps) {
                                                       />
                                                     ) : (
                                                       <span className="text-[11px] font-bold text-indigo-500">
-                                                        {member.profiles.full_name?.charAt(
+                                                        {member.profiles?.full_name?.charAt(
                                                           0,
-                                                        )}
+                                                        ) || "U"}
                                                       </span>
                                                     )}
                                                   </div>
                                                   <span className="text-[13px] font-medium text-gray-700 truncate">
-                                                    {member.profiles.full_name}
+                                                    {member.profiles
+                                                      ?.full_name || "Member"}
                                                   </span>
                                                   {isAssigned && (
                                                     <CheckCircle2

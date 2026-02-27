@@ -148,7 +148,28 @@ CREATE OR REPLACE FUNCTION public.handle_new_user()
 RETURNS trigger AS $$
 BEGIN
   INSERT INTO public.profiles (id, full_name, avatar_url)
-  VALUES (new.id, new.raw_user_meta_data->>'full_name', new.raw_user_meta_data->>'avatar_url');
+  VALUES (
+    new.id,
+    -- Google OAuth uses 'name', email/password signup uses 'full_name'
+    COALESCE(
+      new.raw_user_meta_data->>'full_name',
+      new.raw_user_meta_data->>'name',
+      split_part(new.email, '@', 1)
+    ),
+    COALESCE(
+      new.raw_user_meta_data->>'avatar_url',
+      new.raw_user_meta_data->>'picture'
+    )
+  )
+  ON CONFLICT (id) DO UPDATE SET
+    full_name = COALESCE(
+      EXCLUDED.full_name,
+      profiles.full_name
+    ),
+    avatar_url = COALESCE(
+      EXCLUDED.avatar_url,
+      profiles.avatar_url
+    );
   RETURN new;
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
