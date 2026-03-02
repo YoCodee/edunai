@@ -55,6 +55,13 @@ export default async function DashboardOverview() {
     .select("id", { count: "exact" })
     .eq("user_id", user?.id || "");
 
+  // Fetch user activity for Resume Card
+  const { data: activity } = await supabase
+    .from("user_activity")
+    .select("last_tool, last_resource_title, progress_value, last_visited_at")
+    .eq("user_id", user?.id || "")
+    .maybeSingle();
+
   const totalStudySets = studySets?.length || 0;
 
   const todayEvents =
@@ -68,6 +75,10 @@ export default async function DashboardOverview() {
       notes={notes || []}
       boards={boards || []}
       todayEvents={todayEvents}
+      lastTool={activity?.last_tool ?? null}
+      lastResourceTitle={activity?.last_resource_title ?? null}
+      progressValue={activity?.progress_value ?? 0}
+      lastVisitedAt={activity?.last_visited_at ?? null}
     />
   );
 }

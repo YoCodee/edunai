@@ -177,3 +177,42 @@ $$ LANGUAGE plpgsql SECURITY DEFINER;
 CREATE TRIGGER on_auth_user_created
   AFTER INSERT ON auth.users
   FOR EACH ROW EXECUTE PROCEDURE public.handle_new_user();
+
+
+-- ==========================================
+-- 7. UX FEATURES: ONBOARDING, ACTIVITY & RESUME
+-- ==========================================
+
+-- Feature 1: Onboarding fields on profiles
+ALTER TABLE profiles
+  ADD COLUMN IF NOT EXISTS onboarding_completed BOOLEAN DEFAULT FALSE,
+  ADD COLUMN IF NOT EXISTS study_goal TEXT,    -- 'exam' | 'hobby' | 'career'
+  ADD COLUMN IF NOT EXISTS skill_level TEXT;   -- 'beginner' | 'intermediate' | 'advanced'
+
+-- Feature 4: Resume Card — last tool visited
+CREATE TABLE IF NOT EXISTS user_activity (
+  user_id          UUID REFERENCES public.profiles(id) ON DELETE CASCADE PRIMARY KEY,
+  last_tool        TEXT,         -- 'notes', 'flashcards', 'boards', 'schedule', 'scanner'
+  last_resource_id UUID,         -- ID of the last item the user opened
+  last_resource_title TEXT,
+  progress_value   INTEGER DEFAULT 0,  -- 0–100
+  last_visited_at  TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+ALTER TABLE user_activity ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "Users manage own activity" ON user_activity
+  FOR ALL USING (auth.uid() = user_id);
+
+-- Feature 5: Activity Heatmap log
+CREATE TABLE IF NOT EXISTS activity_log (
+  id             UUID DEFAULT uuid_generate_v4() PRIMARY KEY,
+  user_id        UUID REFERENCES public.profiles(id) ON DELETE CASCADE,
+  activity_date  DATE DEFAULT CURRENT_DATE,
+  activity_count INTEGER DEFAULT 1,
+  UNIQUE(user_id, activity_date)
+);
+
+ALTER TABLE activity_log ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "Users manage own activity log" ON activity_log
+  FOR ALL USING (auth.uid() = user_id);
+

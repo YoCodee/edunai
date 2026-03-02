@@ -76,3 +76,157 @@ h2,
 .font-friendly {
   font-family: "Outfit", sans-serif;
 }
+
+/* ── CUSTOM SCROLLBAR ── */
+.custom-scrollbar::-webkit-scrollbar {
+  width: 5px;
+}
+.custom-scrollbar::-webkit-scrollbar-track {
+  background: transparent;
+}
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  background: #e5e7eb;
+  border-radius: 99px;
+}
+.custom-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: #d1d5db;
+}
+
+/* ── SKELETON SHIMMER ── */
+@keyframes skeleton-shimmer {
+  0% {
+    background-position: -400px 0;
+  }
+  100% {
+    background-position: 400px 0;
+  }
+}
+.skeleton-shimmer {
+  background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
+  background-size: 800px 100%;
+  animation: skeleton-shimmer 1.4s ease-in-out infinite;
+  border-radius: 8px;
+}
+
+/* ── SUCCESS FEEDBACK ── */
+@keyframes success-pop {
+  0% {
+    transform: scale(0.4);
+    opacity: 0;
+  }
+  60% {
+    transform: scale(1.2);
+    opacity: 1;
+  }
+  100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+@keyframes success-fade {
+  0% {
+    opacity: 1;
+  }
+  70% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+  }
+}
+.success-pop {
+  animation:
+    success-pop 0.45s cubic-bezier(0.34, 1.56, 0.64, 1) forwards,
+    success-fade 1.5s ease 0.8s forwards;
+}
+
+/* ── CONFETTI PARTICLE ── */
+@keyframes confetti-fall {
+  0% {
+    transform: translateY(-10px) rotate(0deg);
+    opacity: 1;
+  }
+  100% {
+    transform: translateY(120px) rotate(720deg);
+    opacity: 0;
+  }
+}
+.confetti-particle {
+  position: absolute;
+  width: 8px;
+  height: 8px;
+  border-radius: 2px;
+  animation: confetti-fall 1.4s ease-out forwards;
+}
+
+/* ── FOCUS MODE ── */
+.focus-hidden {
+  transition:
+    opacity 0.35s ease,
+    visibility 0.35s ease;
+  opacity: 0 !important;
+  visibility: hidden !important;
+  pointer-events: none !important;
+}
+.focus-visible {
+  transition:
+    opacity 0.35s ease,
+    visibility 0.35s ease;
+  opacity: 1;
+  visibility: visible;
+}
+
+/* ── ONBOARDING CARD HOVER ── */
+.ob-option {
+  transition:
+    border-color 0.18s ease,
+    background 0.18s ease,
+    transform 0.18s ease,
+    box-shadow 0.18s ease;
+}
+.ob-option:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.07);
+}
+.ob-option.selected {
+  border-color: #fca03e;
+  background: #fffbf5;
+}
+
+/* ── SKILL TREE NODE ── */
+@keyframes node-glow {
+  0%,
+  100% {
+    box-shadow: 0 0 0 0 rgba(252, 160, 62, 0.4);
+  }
+  50% {
+    box-shadow: 0 0 0 8px rgba(252, 160, 62, 0);
+  }
+}
+.node-unlocked {
+  animation: node-glow 2s ease-in-out infinite;
+}
+
+/* ── HEATMAP CELL ── */
+.heat-cell {
+  transition: transform 0.1s ease;
+}
+.heat-cell:hover {
+  transform: scale(1.4);
+  z-index: 10;
+  position: relative;
+}
+
+/* ── POMODORO RING ── */
+@keyframes pomo-pulse {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.6;
+  }
+}
+.pomo-ring-active {
+  animation: pomo-pulse 2s ease-in-out infinite;
+}

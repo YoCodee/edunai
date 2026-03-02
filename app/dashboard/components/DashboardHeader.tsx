@@ -11,10 +11,12 @@ import {
   Code,
   Sparkles,
   Calendar as CalendarIcon,
+  Target,
 } from "lucide-react";
 import Link from "next/link";
 import { logout } from "../../login/actions";
 import clsx from "clsx";
+import { useFocusMode } from "@/components/ui/FocusModeContext";
 
 export default function DashboardHeader({
   userFullName,
@@ -24,6 +26,7 @@ export default function DashboardHeader({
   const displayName = userFullName || "Student";
   const [isNotificationsOpen, setIsNotificationsOpen] = useState(false);
   const [isProfileOpen, setIsProfileOpen] = useState(false);
+  const { isFocused, toggle: toggleFocus } = useFocusMode();
 
   const notifRef = useRef<HTMLDivElement>(null);
   const profileRef = useRef<HTMLDivElement>(null);
@@ -74,6 +77,19 @@ export default function DashboardHeader({
 
       {/* Right side: Actions & Profile */}
       <div className="flex items-center gap-4 relative">
+        {/* Focus Mode toggle */}
+        <button
+          onClick={toggleFocus}
+          title={isFocused ? "Exit Focus Mode (Esc)" : "Enter Focus Mode"}
+          className={clsx(
+            "p-2 rounded-full transition-all text-[13px] font-bold border",
+            isFocused
+              ? "bg-[#fca03e] text-white border-orange-300 shadow-md"
+              : "text-gray-500 border-transparent hover:border-gray-200 hover:bg-gray-100",
+          )}
+        >
+          <Target size={18} />
+        </button>
         {/* Notifications */}
         <div ref={notifRef} className="relative">
           <button

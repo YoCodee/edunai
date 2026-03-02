@@ -142,10 +142,7 @@ export default function LoginPage() {
                 </svg>
                 Google
               </button>
-              <button className="flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl border border-gray-200 bg-white hover:bg-gray-50 transition-colors text-[13px] font-semibold text-gray-700 shadow-sm">
-                <Github size={18} />
-                Github
-              </button>
+             
             </div>
 
             <div className="flex items-center gap-3 mb-8">

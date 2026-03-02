@@ -11,6 +11,8 @@ import {
   BrainCircuit,
   LogOut,
   Settings,
+  TrendingUp,
+  School
 } from "lucide-react";
 import clsx from "clsx";
 import { logout } from "../../login/actions";
@@ -37,6 +39,16 @@ export default function Sidebar() {
       href: "/dashboard/assistant",
       icon: BrainCircuit,
     },
+    {
+      name: "Progress",
+      href: "/dashboard/progress",
+      icon: TrendingUp,
+    },
+    {
+      name: "Learning Plan",
+      href: "/dashboard/learning-plan",
+      icon: School,
+    }
   ];
 
   return (
@@ -94,8 +106,6 @@ export default function Sidebar() {
 
       {/* Bottom Section */}
       <div className="p-6 border-t border-gray-100/50">
-
-
         <ul className="space-y-1.5">
           <li>
             <Link

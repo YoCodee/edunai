@@ -5,7 +5,7 @@ import Logoedu from "@/public/images/logoedunai.svg";
 import Image from "next/image";
 const Hero = () => {
   return (
-    <section className="relative pt-[50px] pb-32 overflow-hidden px-4 md:px-6">
+    <section className="relative pt-[70px] pb-32 overflow-hidden px-4 md:px-6">
       <div className="max-w-[1400px] mx-auto min-h-[700px] rounded-[40px] dot-pattern relative flex flex-col items-center justify-center py-40 px-4 shadow-[0_0_0_1px_rgba(0,0,0,0.05)] bg-[#fbfbfb]">
         {/* CENTER FLOATING LOGO BOX */}
         <div className="w-[88px] h-[88px] bg-white rounded-[24px] shadow-[0_24px_48px_-12px_rgba(0,0,0,0.15)] flex items-center justify-center mb-12 relative z-10 border border-black/[0.03]">

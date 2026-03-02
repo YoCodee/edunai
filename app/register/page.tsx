@@ -197,10 +197,7 @@ export default function RegisterPage() {
                 </svg>
                 Google
               </button>
-              <button className="flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl border border-gray-200 bg-white hover:bg-gray-50 transition-colors text-[13px] font-semibold text-gray-700 shadow-sm">
-                <Github size={18} />
-                Github
-              </button>
+
             </div>
 
             <p className="text-[11px] text-gray-400 text-center mt-6">

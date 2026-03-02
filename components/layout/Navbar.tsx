@@ -1,25 +1,26 @@
 "use client";
 
-import Logoedu from "../../public/images/logoedunai.svg";
 import Image from "next/image";
+import Logoedu from "../../public/images/logoedunai.svg";
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { createClient } from "@/utils/supabase/client";
-import { Loader2 } from "lucide-react";
+import { Loader2, Menu, X, LayoutDashboard, LogIn } from "lucide-react";
 
 export default function Navbar() {
   const [user, setUser] = useState<any>(null);
   const [loading, setLoading] = useState(true);
+  const [scrolled, setScrolled] = useState(false);
+  const [mobileOpen, setMobileOpen] = useState(false);
   const supabase = createClient();
 
+  // Auth listener
   useEffect(() => {
-    // 1. Initial fetch
     const fetchUser = async () => {
       const {
         data: { session },
       } = await supabase.auth.getSession();
       if (session?.user) {
-        // Optionally try to get the profile name
         const { data: profile } = await supabase
           .from("profiles")
           .select("full_name, avatar_url")
@@ -34,10 +35,9 @@ export default function Navbar() {
 
     fetchUser();
 
-    // 2. Listen to state changes (Login / Logout events)
     const {
       data: { subscription },
-    } = supabase.auth.onAuthStateChange(async (event, session) => {
+    } = supabase.auth.onAuthStateChange(async (_, session) => {
       if (session?.user) {
         const { data: profile } = await supabase
           .from("profiles")
@@ -51,90 +51,169 @@ export default function Navbar() {
       setLoading(false);
     });
 
-    return () => {
-      subscription.unsubscribe();
-    };
+    return () => subscription.unsubscribe();
   }, []);
 
-  return (
-    <nav className="fixed top-0 left-0 right-0 z-50 flex items-center justify-between px-10 py-5 max-w-[1400px] mx-auto w-full bg-[#fbfbfb]/80 backdrop-blur-md border-b border-gray-100/50">
-      <Link href="/" className="flex items-center gap-3">
-        <div className="logo cursor-pointer hover:opacity-90 transition-opacity">
-          <Image src={Logoedu} alt="EduNai Logo" width={110} height={110} />
-        </div>
-      </Link>
+  // Scroll shadow
+  useEffect(() => {
+    const onScroll = () => setScrolled(window.scrollY > 12);
+    window.addEventListener("scroll", onScroll, { passive: true });
+    return () => window.removeEventListener("scroll", onScroll);
+  }, []);
 
-      <div className="hidden lg:flex items-center gap-10 text-[14px] font-medium text-foreground/80">
-        <Link
-          href="#features"
-          className="hover:text-foreground transition-colors"
-        >
-          Features
+  const navLinks = [
+    { label: "Features", href: "#features" },
+    { label: "Solutions", href: "#solutions" },
+    { label: "How it Works", href: "#how-it-works" },
+    { label: "Pricing", href: "#pricing" },
+  ];
+
+  const displayName =
+    user?.full_name?.split(" ")[0] || user?.email?.split("@")[0] || "Student";
+  const initials = displayName.charAt(0).toUpperCase();
+
+  return (
+    <nav
+      className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${
+        scrolled
+          ? "bg-[#fbfbfb]/90 backdrop-blur-xl shadow-[0_1px_0_rgba(0,0,0,0.06)]"
+          : "bg-transparent"
+      }`}
+    >
+      <div className="max-w-[1400px] mx-auto px-6 md:px-10 h-[68px] flex items-center justify-between">
+        {/* ─── LEFT: Logo ─── */}
+        <Link href="/" className="flex items-center gap-3 shrink-0 group">
+          <div className="w-9 h-9 rounded-[10px] bg-white shadow-sm border border-black/6 flex items-center justify-center transition-transform group-hover:scale-105">
+            <Image src={Logoedu} alt="EduNai Logo" width={24} height={24} />
+          </div>
+          <span
+            className="text-[20px] font-bold tracking-tight text-[#1a1c20] hidden sm:block"
+            style={{ fontFamily: "serif" }}
+          >
+            Edunai
+          </span>
         </Link>
-        <Link
-          href="#solutions"
-          className="hover:text-foreground transition-colors"
-        >
-          Solutions
-        </Link>
-        <Link
-          href="#pricing"
-          className="hover:text-foreground transition-colors"
-        >
-          Pricing
-        </Link>
+
+        {/* ─── CENTER: Nav Links (desktop) ─── */}
+        <div className="hidden lg:flex items-center gap-1">
+          {navLinks.map((link) => (
+            <Link
+              key={link.label}
+              href={link.href}
+              className="px-4 py-2 rounded-xl text-[14px] font-medium text-foreground/60 hover:text-foreground hover:bg-black/4 transition-all"
+            >
+              {link.label}
+            </Link>
+          ))}
+        </div>
+
+        {/* ─── RIGHT: Auth CTAs ─── */}
+        <div className="flex items-center gap-3">
+          {loading ? (
+            <div className="w-8 h-8 flex items-center justify-center text-gray-400">
+              <Loader2 size={16} className="animate-spin" />
+            </div>
+          ) : user ? (
+            /* ── Logged In ── */
+            <>
+              {/* Avatar chip */}
+              <div className="hidden md:flex items-center gap-2.5 bg-white border border-black/6 rounded-full pl-1 pr-3 py-1 shadow-sm">
+                <div className="w-7 h-7 rounded-full bg-[#fca03e] flex items-center justify-center text-white font-bold text-[11px] shadow-sm overflow-hidden shrink-0">
+                  {user.avatar_url ? (
+                    <img
+                      src={user.avatar_url}
+                      alt="Avatar"
+                      className="w-full h-full object-cover"
+                    />
+                  ) : (
+                    initials
+                  )}
+                </div>
+                <span className="text-[13px] font-semibold text-[#1a1c20]">
+                  {displayName}
+                </span>
+              </div>
+
+              {/* Dashboard button */}
+              <Link
+                href="/dashboard"
+                className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl text-[14px] font-bold text-white bg-[#1a1c20] hover:bg-[#2a2c30] transition-all shadow-sm"
+              >
+                <LayoutDashboard size={14} />
+                <span className="hidden sm:inline">Dashboard</span>
+              </Link>
+            </>
+          ) : (
+            /* ── Logged Out ── */
+            <>
+              <Link
+                href="/login"
+                className="hidden xl:inline-flex items-center gap-1.5 px-4 py-2.5 rounded-xl text-[14px] font-medium text-foreground/70 hover:text-foreground hover:bg-black/4 transition-all"
+              >
+                <LogIn size={14} />
+                Sign in
+              </Link>
+
+              <Link
+                href="/register"
+                className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl text-[14px] font-bold text-white bg-[#2d73ff] hover:bg-[#1a5fe6] transition-all shadow-[0_4px_14px_rgba(45,115,255,0.35)] hover:shadow-[0_6px_20px_rgba(45,115,255,0.25)]"
+              >
+                Get Started Free
+              </Link>
+            </>
+          )}
+
+          {/* Mobile hamburger */}
+          <button
+            onClick={() => setMobileOpen((v) => !v)}
+            className="lg:hidden p-2 rounded-xl text-foreground/70 hover:text-foreground hover:bg-black/4 transition-colors ml-1"
+            aria-label="Toggle menu"
+          >
+            {mobileOpen ? <X size={20} /> : <Menu size={20} />}
+          </button>
+        </div>
       </div>
 
-      <div className="flex items-center gap-6 text-[14px] font-medium">
-        {loading ? (
-          <div className="w-20 flex justify-end text-gray-400">
-            <Loader2 size={18} className="animate-spin" />
-          </div>
-        ) : user ? (
-          // Logged In View
-          <>
-            <div className="hidden md:flex items-center gap-3 mr-2 bg-blue-50/50 py-1.5 px-3 rounded-full border border-blue-100/50">
-              <div className="w-7 h-7 bg-blue-500 rounded-full flex items-center justify-center text-white font-bold text-[10px] shadow-sm overflow-hidden">
-                {user.avatar_url ? (
-                  <img
-                    src={user.avatar_url}
-                    alt="Avatar"
-                    className="w-full h-full object-cover"
-                  />
-                ) : (
-                  (
-                    user.full_name?.charAt(0) ||
-                    user.email?.charAt(0) ||
-                    "U"
-                  ).toUpperCase()
-                )}
-              </div>
-              <span className="text-[13px] font-semibold text-blue-900 pr-1">
-                {user.full_name?.split(" ")[0] || "Student"}
-              </span>
-            </div>
-            <Link href="/dashboard" passHref>
-              <button className="px-6 py-2.5 rounded-xl border border-transparent hover:border-blue-500/20 text-white bg-blue-600 hover:bg-blue-700 transition-all shadow-[0_4px_14px_0_rgb(0,118,255,39%)] hover:shadow-[0_6px_20px_rgba(0,118,255,23%)] font-bold tracking-wide">
-                Dashboard
-              </button>
-            </Link>
-          </>
-        ) : (
-          // Logged Out View
-          <>
+      {/* ─── MOBILE MENU ─── */}
+      <div
+        className={`lg:hidden overflow-hidden transition-all duration-300 ${
+          mobileOpen ? "max-h-[400px] opacity-100" : "max-h-0 opacity-0"
+        }`}
+      >
+        <div className="bg-[#fbfbfb]/95 backdrop-blur-xl border-t border-black/6 px-6 py-5 space-y-1">
+          {navLinks.map((link) => (
             <Link
-              href="/login"
-              className="hidden xl:block text-foreground/80 hover:text-foreground font-semibold transition-colors"
+              key={link.label}
+              href={link.href}
+              onClick={() => setMobileOpen(false)}
+              className="block px-4 py-3 rounded-xl text-[15px] font-medium text-foreground/70 hover:text-foreground hover:bg-black/4 transition-all"
             >
-              Sign in
+              {link.label}
             </Link>
-            <Link href="/register" passHref>
-              <button className="px-5 py-2.5 rounded-xl border border-zinc-200 text-foreground hover:bg-zinc-50 transition-colors bg-white shadow-sm font-semibold hover:-translate-y-0.5 transform">
-                Get Started Free
-              </button>
+          ))}
+
+          <div className="pt-3 border-t border-black/6 flex flex-col gap-2">
+            {!user && !loading && (
+              <Link
+                href="/login"
+                onClick={() => setMobileOpen(false)}
+                className="px-4 py-3 rounded-xl text-[15px] font-semibold text-foreground/70 hover:text-foreground hover:bg-black/4 transition-all flex items-center gap-2"
+              >
+                <LogIn size={16} /> Sign in
+              </Link>
+            )}
+            <Link
+              href={user ? "/dashboard" : "/register"}
+              onClick={() => setMobileOpen(false)}
+              className="px-4 py-3 rounded-xl text-[15px] font-bold text-white text-center transition-all"
+              style={{
+                background: user ? "#1a1c20" : "#2d73ff",
+              }}
+            >
+              {user ? "Go to Dashboard" : "Get Started Free"}
             </Link>
-          </>
-        )}
+          </div>
+        </div>
       </div>
     </nav>
   );

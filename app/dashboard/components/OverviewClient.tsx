@@ -19,6 +19,7 @@ import {
   Plus,
 } from "lucide-react";
 import { format, parseISO } from "date-fns";
+import ResumeCard from "./ResumeCard";
 
 interface Note {
   id: string;
@@ -47,6 +48,10 @@ interface Props {
   notes: Note[];
   boards: Board[];
   todayEvents: Event[];
+  lastTool: string | null;
+  lastResourceTitle: string | null;
+  progressValue: number;
+  lastVisitedAt: string | null;
 }
 
 // Animated Counter
@@ -74,6 +79,10 @@ export default function OverviewClient({
   notes,
   boards,
   todayEvents,
+  lastTool,
+  lastResourceTitle,
+  progressValue,
+  lastVisitedAt,
 }: Props) {
   const containerRef = useRef<HTMLDivElement>(null);
 
@@ -210,6 +219,14 @@ export default function OverviewClient({
       `}</style>
 
       <div ref={containerRef} className="w-full space-y-7">
+        {/* ── RESUME CARD ── */}
+        <ResumeCard
+          lastTool={lastTool}
+          lastResourceTitle={lastResourceTitle}
+          progressValue={progressValue}
+          lastVisitedAt={lastVisitedAt}
+        />
+
         {/* ── HEADER ── */}
         <div className="ov-header">
           <div className="flex items-start justify-between flex-wrap gap-4">
