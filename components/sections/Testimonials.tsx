@@ -206,7 +206,7 @@ export default function Testimonials() {
           {/* Navigation Controls */}
           <div
             ref={controlsRef}
-            className="absolute -bottom-8 left-0 right-0 flex justify-center gap-4 z-50"
+            className="absolute -bottom-7 left-0 right-0 flex justify-center gap-4 z-50"
           >
             <button
               onClick={handlePrev}
