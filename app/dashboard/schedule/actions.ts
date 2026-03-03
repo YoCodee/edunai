@@ -25,9 +25,11 @@ export async function addSingleEvent(data: {
   if (!user) return { error: "User not authenticated" };
 
   const startDateTime = new Date(
-    `${data.date}T${data.startTime}:00`,
+    `${data.date}T${data.startTime}:00+07:00`,
   ).toISOString();
-  const endDateTime = new Date(`${data.date}T${data.endTime}:00`).toISOString();
+  const endDateTime = new Date(
+    `${data.date}T${data.endTime}:00+07:00`,
+  ).toISOString();
 
   const { error } = await supabase.from("events").insert([
     {
@@ -73,10 +75,10 @@ export async function addFixedClass(data: {
     const dateString = format(targetDate, "yyyy-MM-dd");
 
     const startDateTime = new Date(
-      `${dateString}T${data.startTime}:00`,
+      `${dateString}T${data.startTime}:00+07:00`,
     ).toISOString();
     const endDateTime = new Date(
-      `${dateString}T${data.endTime}:00`,
+      `${dateString}T${data.endTime}:00+07:00`,
     ).toISOString();
 
     eventsToInsert.push({
