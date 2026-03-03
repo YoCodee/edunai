@@ -79,7 +79,9 @@ export default function Testimonials() {
     const tl = gsap.timeline({
       scrollTrigger: {
         trigger: sectionRef.current,
-        start: "top 70%", // Animasi mulai saat ujung atas section mencapai 70% tinggi layar dari atas (hampir dekat bawah)
+        // Animasi baru dimulai ketika bagian atas section sudah mencapai 30% layar dari atas
+        // artinya user sudah benar-benar berada di dalam bagian Testimonial
+        start: "top 30%",
         toggleActions: "play none none none",
       },
     });
