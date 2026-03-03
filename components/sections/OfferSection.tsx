@@ -18,7 +18,6 @@ export default function OfferSection() {
   return (
     <section className="bg-[#fbfcff] py-24 relative font-sans">
       <div className="max-w-[1200px] mx-auto px-6 relative z-10">
-        {/* Header matching Solutions section style */}
         <div className="flex flex-col items-center text-center mb-16">
           <div className="px-5 py-2 bg-white rounded-full border border-gray-200 shadow-[0_2px_8px_rgba(0,0,0,0.04)] text-sm font-medium text-gray-600 mb-8 inline-flex items-center">
             Features
@@ -32,13 +31,13 @@ export default function OfferSection() {
           </p>
         </div>
 
-        {/* CSS Grid for the layout */}
+  
         <div className="grid grid-cols-1 md:grid-cols-12 gap-6 w-full max-w-[1100px] mx-auto">
-          {/* Top Left: Collaboration (Col-span 5 or 6) */}
+        
           <div className="md:col-span-5 bg-white rounded-[32px] border border-gray-100 p-8 pt-12 shadow-[0_4px_20px_-10px_rgba(0,0,0,0.05)] flex flex-col items-center text-center hover:shadow-[0_8px_30px_-10px_rgba(0,0,0,0.08)] transition-all">
-            {/* Visual Mockup Container */}
+          
             <div className="relative w-full h-[220px] mb-8 flex justify-center perspective-[1000px]">
-              {/* Back Card */}
+            
               <div className="absolute top-4 -right-2 w-48 h-56 bg-white border border-gray-100 rounded-2xl shadow-sm rotate-[4deg] p-4 flex flex-col gap-3">
                 <div className="w-1/2 h-2 bg-gray-100 rounded-full mb-2"></div>
                 <div className="flex items-center gap-2">
@@ -55,7 +54,7 @@ export default function OfferSection() {
                 </div>
               </div>
 
-              {/* Front Card */}
+           
               <div className="absolute top-10 left-4 w-52 h-48 bg-white border border-gray-100 rounded-2xl shadow-[0_20px_40px_-10px_rgba(0,0,0,0.1)] -rotate-[2deg] p-4 z-10 flex flex-col">
                 <div className="text-[10px] font-bold text-gray-400 mb-3 uppercase flex justify-between">
                   Board Members <Search size={10} className="text-gray-300" />
@@ -73,8 +72,6 @@ export default function OfferSection() {
                 </button>
               </div>
             </div>
-
-            {/* Content */}
             <h3 className="text-[22px] font-bold text-gray-900 mb-3">
               Trello-style Collab
             </h3>
@@ -84,10 +81,9 @@ export default function OfferSection() {
             </p>
           </div>
 
-          {/* Top Right: Planning (Col-span 7 or 6) */}
+
           <div className="md:col-span-7 bg-white rounded-[32px] border border-gray-100 py-8 px-10 shadow-[0_4px_20px_-10px_rgba(0,0,0,0.05)] flex flex-col items-center text-center hover:shadow-[0_8px_30px_-10px_rgba(0,0,0,0.08)] transition-all">
             <div className="relative w-full h-[220px] mb-8 flex items-center justify-center gap-6">
-              {/* Visual Fake Dashboard Elements */}
               <div className="w-[140px] h-[180px] bg-white border border-gray-100 rounded-2xl shadow-sm p-3 flex flex-col">
                 <div className="text-[9px] text-gray-400 font-bold mb-4 flex justify-between">
                   <span>WEEKLY</span>{" "}
@@ -154,9 +150,9 @@ export default function OfferSection() {
             </p>
           </div>
 
-          {/* Bottom Left: AI Blackboard (Col-span 8) */}
+        
           <div className="md:col-span-8 bg-white rounded-[32px] border border-gray-100 py-10 px-12 shadow-[0_4px_20px_-10px_rgba(0,0,0,0.05)] overflow-hidden relative group hover:shadow-[0_8px_30px_-10px_rgba(0,0,0,0.08)] transition-all">
-            {/* Left Text */}
+          
             <div className="absolute top-12 left-12 w-[240px] z-20">
               <div className="w-10 h-10 bg-orange-50 rounded-xl mb-6 flex items-center justify-center border border-orange-100 shadow-sm text-orange-500">
                 <ImageIcon size={20} />

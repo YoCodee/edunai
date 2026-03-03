@@ -79,36 +79,33 @@ export default function Testimonials() {
     const tl = gsap.timeline({
       scrollTrigger: {
         trigger: sectionRef.current,
-        start: "top center",
-        end: "+=1000",
-        scrub: 1,
-        pin: true,
-        anticipatePin: 1,
+        start: "top 60%", 
+        toggleActions: "play none none none",
       },
     });
 
-    // 1. Envelope flap opens up
+
     tl.to(flapRef.current, {
       rotationX: -180,
-      duration: 1,
+      duration: 0.6,
       ease: "power2.inOut",
     });
 
-    // 2. Center card slides up out of envelope
+
     tl.to(
       centerCardRef.current,
-      { y: -30, scale: 1, opacity: 1, duration: 1.5, ease: "power2.out" },
-      "-=0.3",
+      { y: -30, scale: 1, opacity: 1, duration: 0.8, ease: "back.out(1.2)" },
+      "-=0.2",
     );
 
-    // 3. Envelope fades out & moves down
+
     tl.to(
       envelopeRef.current,
-      { y: 300, opacity: 0, duration: 1.2, ease: "power2.in" },
+      { y: 150, opacity: 0, duration: 0.5, ease: "power2.in" },
       "+=0.2",
     );
 
-    // 4. Side cards emerge from behind the center card, scaling and rotating
+    
     tl.to(
       leftCardRef.current,
       {
@@ -116,10 +113,10 @@ export default function Testimonials() {
         y: -20,
         rotation: -12,
         opacity: 0.6,
-        duration: 1.5,
+        duration: 0.8,
         ease: "back.out(1.2)",
       },
-      "-=0.5",
+      "-=0.2",
     );
     tl.to(
       rightCardRef.current,
@@ -128,14 +125,14 @@ export default function Testimonials() {
         y: -20,
         rotation: 12,
         opacity: 0.6,
-        duration: 1.5,
+        duration: 0.8,
         ease: "back.out(1.2)",
       },
       "<",
     );
 
-    // 5. Controls fade in
-    tl.to(controlsRef.current, { opacity: 1, y: 0, duration: 0.5 }, "-=0.5");
+
+    tl.to(controlsRef.current, { opacity: 1, y: 0, duration: 0.4 }, "-=0.4");
 
     return () => {
       ScrollTrigger.getAll().forEach((t) => t.kill());
@@ -165,7 +162,7 @@ export default function Testimonials() {
       className="bg-[#fbfcff] py-24 min-h-screen relative overflow-hidden font-sans border-t border-gray-100 flex flex-col justify-center"
     >
       <div className="max-w-[1200px] mx-auto px-6 relative z-10 flex flex-col items-center w-full">
-        {/* Header */}
+       
         <div className="text-center mb-10 w-full">
           <h2 className="text-[44px] md:text-[60px] font-bold tracking-tight text-[#1a1c20] mb-4">
             Words of Appreciation
@@ -176,12 +173,12 @@ export default function Testimonials() {
           </p>
         </div>
 
-        {/* Animation Container */}
+      
         <div
           ref={containerRef}
           className="relative w-full max-w-[1000px] h-[550px] flex items-center justify-center mt-12"
         >
-          {/* Side Cards (Left and Right) */}
+       
           <div
             ref={leftCardRef}
             className="absolute inset-0 m-auto w-[340px] h-[380px] pointer-events-none"
@@ -195,7 +192,7 @@ export default function Testimonials() {
             <TestimonialCard data={getCardData(1)} />
           </div>
 
-          {/* Center Card */}
+          
           <div
             ref={centerCardRef}
             className="absolute inset-0 m-auto w-[340px] h-[380px]"
@@ -203,7 +200,7 @@ export default function Testimonials() {
             <TestimonialCard data={getCardData(0)} active />
           </div>
 
-          {/* Navigation Controls */}
+      
           <div
             ref={controlsRef}
             className="absolute -bottom-7 left-0 right-0 flex justify-center gap-4 z-50"
@@ -222,12 +219,12 @@ export default function Testimonials() {
             </button>
           </div>
 
-          {/* Envelope Graphic */}
+          
           <div
             ref={envelopeRef}
             className="absolute bottom-[0%] left-1/2 -translate-x-1/2 w-[440px] h-[280px] z-40 pointer-events-none"
           >
-            {/* Back of envelope (Inside) */}
+        
             <svg
               width="440"
               height="280"
@@ -242,7 +239,7 @@ export default function Testimonials() {
               />
             </svg>
 
-            {/* Top Flap (Starts closed, rotates back) */}
+         
             <svg
               width="440"
               height="200"
@@ -254,7 +251,7 @@ export default function Testimonials() {
               <path ref={flapRef} d="M0 80L220 200L440 80H0Z" fill="#9f75ff" />
             </svg>
 
-            {/* Front body of envelope (White with drop shadow) */}
+        
             <svg
               width="440"
               height="280"

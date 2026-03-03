@@ -1,7 +1,7 @@
 import { createClient } from "@/utils/supabase/server";
-import AssistantClient from "./AssistantClient";
+import AIWorkspaceClient from "./AIWorkspaceClient";
 
-export default async function AssistantPage() {
+export default async function AIWorkspacePage() {
   const supabase = await createClient();
 
   const {
@@ -12,11 +12,17 @@ export default async function AssistantPage() {
     return <div>Please log in first.</div>;
   }
 
-  // Fetch user's existing notes
+  // Fetch user's existing notes (include folder_id)
   const { data: notes } = await supabase
     .from("notes")
-    .select("id, title, created_at, content_markdown")
+    .select("id, title, created_at, content_markdown, tags, folder_id")
     .order("created_at", { ascending: false });
+
+  // Fetch folders
+  const { data: folders } = await supabase
+    .from("note_folders")
+    .select("id, name, created_at")
+    .order("created_at", { ascending: true });
 
   // Fetch user's existing flashcard study sets
   const { data: studySets } = await supabase
@@ -25,6 +31,10 @@ export default async function AssistantPage() {
     .order("created_at", { ascending: false });
 
   return (
-    <AssistantClient notes={notes || []} initialStudySets={studySets || []} />
+    <AIWorkspaceClient
+      initialNotes={notes || []}
+      initialFolders={folders || []}
+      initialStudySets={studySets || []}
+    />
   );
 }

@@ -5,6 +5,48 @@ import { ChatGoogleGenerativeAI } from "@langchain/google-genai";
 import { HumanMessage } from "@langchain/core/messages";
 import { addWeeks, format } from "date-fns";
 
+// 0. Single Event (with optional reminder)
+export async function addSingleEvent(data: {
+  title: string;
+  location: string;
+  description: string;
+  date: string; // YYYY-MM-DD
+  startTime: string; // HH:mm
+  endTime: string; // HH:mm
+  color: string;
+  type: string;
+  reminderMinutes: number; // 0 = no reminder
+}) {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) return { error: "User not authenticated" };
+
+  const startDateTime = new Date(
+    `${data.date}T${data.startTime}:00`,
+  ).toISOString();
+  const endDateTime = new Date(`${data.date}T${data.endTime}:00`).toISOString();
+
+  const { error } = await supabase.from("events").insert([
+    {
+      user_id: user.id,
+      title: data.title,
+      location: data.location || "",
+      description: data.description || "",
+      start_time: startDateTime,
+      end_time: endDateTime,
+      event_type: data.type,
+      color: data.color,
+      reminder_minutes: data.reminderMinutes > 0 ? data.reminderMinutes : null,
+    },
+  ]);
+
+  if (error) return { error: error.message };
+  return { success: true };
+}
+
 // 1. Matkul Tetap (Fixed Class) Generator
 // Generate events for the next 16 weeks starting from a particular date
 export async function addFixedClass(data: {

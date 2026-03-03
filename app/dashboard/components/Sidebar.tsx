@@ -5,14 +5,12 @@ import { usePathname } from "next/navigation";
 import {
   Compass,
   CalendarDays,
-  Camera,
   LayoutDashboard,
-  BookOpenText,
   BrainCircuit,
   LogOut,
   Settings,
-  TrendingUp,
-  School
+  BookOpenText,
+  Users,
 } from "lucide-react";
 import clsx from "clsx";
 import { logout } from "../../login/actions";
@@ -27,28 +25,26 @@ export default function Sidebar() {
       href: "/dashboard/schedule",
       icon: CalendarDays,
     },
-    { name: "AI Board Scanner", href: "/dashboard/scanner", icon: Camera },
+    {
+      name: "AI Workspace",
+      href: "/dashboard/ai-workspace",
+      icon: BrainCircuit,
+    },
     {
       name: "Project Boards",
       href: "/dashboard/boards",
       icon: LayoutDashboard,
     },
-    { name: "Smart Notes", href: "/dashboard/notes", icon: BookOpenText },
     {
-      name: "Study Assistant",
-      href: "/dashboard/assistant",
-      icon: BrainCircuit,
+      name: "Study Guide",
+      href: "/dashboard/study-guide",
+      icon: BookOpenText,
     },
     {
-      name: "Progress",
-      href: "/dashboard/progress",
-      icon: TrendingUp,
+      name: "Study Group",
+      href: "/dashboard/study-group",
+      icon: Users,
     },
-    {
-      name: "Learning Plan",
-      href: "/dashboard/learning-plan",
-      icon: School,
-    }
   ];
 
   return (

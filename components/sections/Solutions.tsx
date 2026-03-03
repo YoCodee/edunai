@@ -151,9 +151,9 @@ const Solutions = () => {
               </div>
             </div>
 
-            {/* Main Content */}
+          
             <div className="flex-1 p-8 overflow-hidden flex flex-col">
-              {/* Top Bar */}
+     
               <div className="flex items-center justify-between mb-8">
                 <div className="flex items-center gap-4 text-sm text-gray-500 font-medium">
                   <ChevronLeft size={16} className="text-gray-300" />
@@ -176,7 +176,7 @@ const Solutions = () => {
                 </div>
               </div>
 
-              {/* Greeting */}
+           
               <div className="flex items-end justify-between mb-6">
                 <h1 className="text-3xl font-medium text-gray-800">
                   Good morning, <span className="font-semibold">Amanda</span>
@@ -186,9 +186,9 @@ const Solutions = () => {
                 </button>
               </div>
 
-              {/* Grid Layout */}
+        
               <div className="grid grid-cols-2 gap-6 flex-1 h-full min-h-0">
-                {/* To do list (left) */}
+        
                 <div className="bg-white rounded-[20px] p-6 shadow-sm border border-gray-100 flex flex-col row-span-2">
                   <div className="flex items-center gap-3 mb-6">
                     <div className="text-xl">✏️</div>
@@ -233,9 +233,9 @@ const Solutions = () => {
                   </div>
                 </div>
 
-                {/* Info Cards (Right side stack) */}
+              
                 <div className="grid grid-cols-2 gap-6 relative">
-                  {/* Tracker */}
+                
                   <div className="bg-white rounded-[20px] p-6 shadow-sm border border-gray-100 flex flex-col items-center justify-between text-center">
                     <div className="w-full flex justify-between items-center mb-4 text-sm font-semibold text-gray-700">
                       Time tracker
@@ -258,10 +258,9 @@ const Solutions = () => {
                     </div>
                   </div>
 
-                  {/* Activity */}
+            
                   <div className="bg-white rounded-[20px] p-5 shadow-sm border border-gray-100 flex flex-col relative w-[300px] z-10 absolute right-0">
                     {" "}
-                    {/* Making it slightly wider to fit chart */}
                     <div className="flex justify-between items-center mb-6">
                       <span className="text-sm font-semibold text-gray-700">
                         Activity
@@ -306,7 +305,7 @@ const Solutions = () => {
                         </div>
                       </div>
 
-                      {/* CSS Donut Charts overlapping */}
+                 
                       <div className="relative w-28 h-28 mr-2">
                         <div className="absolute inset-0 rounded-full border-[6px] border-blue-500 rotate-[45deg] border-l-transparent"></div>
                         <div className="absolute inset-2 rounded-full border-[6px] border-green-400 rotate-[120deg] border-t-transparent border-r-transparent"></div>
@@ -315,8 +314,6 @@ const Solutions = () => {
                     </div>
                   </div>
                 </div>
-
-                {/* Sub-cards */}
                 <div className="col-span-1 bg-white rounded-[20px] p-6 shadow-sm border border-gray-100 flex flex-col relative mt-2">
                   <div className="flex justify-between items-center mb-4">
                     <span className="text-sm font-semibold text-gray-700">
@@ -384,21 +381,21 @@ const Solutions = () => {
             </div>
           </div>
 
-          {/* Floating 3D Block (Left) - "20" */}
+          
           <div className="absolute top-[35%] left-[-40px] md:left-2 lg:left-[-60px] bg-white rounded-[24px] shadow-[0_20px_50px_rgba(0,0,0,0.15)] w-24 h-24 flex items-center justify-center transform -rotate-12 transition-transform hover:rotate-0 hover:scale-110 duration-500 border-b-8 border-r-4 border-gray-100 z-20">
             <span className="text-[40px] font-black text-gray-800 leading-none">
               20
             </span>
           </div>
 
-          {/* Floating 3D Block (Right) - "Checkmark" */}
+    
           <div className="absolute top-[25%] right-[-20px] md:right-8 lg:right-[-40px] bg-white rounded-[20px] shadow-[0_20px_50px_rgba(0,0,0,0.12)] w-[72px] h-[72px] flex items-center justify-center transform rotate-[15deg] transition-transform hover:rotate-0 hover:scale-110 duration-500 border-b-8 border-l-4 border-gray-100 border-b-gray-200 z-20">
             <div className="w-10 h-10 bg-[#1ec69b] rounded-xl flex items-center justify-center shadow-inner">
               <Check size={24} strokeWidth={4} className="text-white" />
             </div>
           </div>
 
-          {/* Bottom Gradient Fade */}
+ 
           <div className="absolute bottom-0 left-0 right-0 h-64 bg-gradient-to-t from-[#fbfcff] via-[#fbfcff]/80 to-transparent z-30 pointer-events-none"></div>
         </div>
       </div>

@@ -1,11 +1,10 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import {
   format,
   addDays,
   startOfWeek,
-  endOfWeek,
   isSameDay,
   parseISO,
   startOfMonth,
@@ -13,6 +12,7 @@ import {
   eachDayOfInterval,
   subMonths,
   addMonths,
+  endOfWeek,
 } from "date-fns";
 import {
   ChevronLeft,
@@ -25,26 +25,63 @@ import {
   CheckCircle2,
   X,
   Loader2,
+  Bell,
+  BellOff,
+  BellRing,
 } from "lucide-react";
 import clsx from "clsx";
 import { createClient } from "@/utils/supabase/client";
-import { addFixedClass, addAITask } from "./actions";
+import { addFixedClass, addSingleEvent } from "./actions";
 import BulkImportModal from "./BulkImportModal";
 import { FileSpreadsheet } from "lucide-react";
 
-// Supabase Event Data Interface
+/* ──────────────────────────────────────────
+   Types
+────────────────────────────────────────── */
 interface EventData {
   id: string;
   title: string;
   description?: string;
   location?: string;
-  start_time: string; // ISO string from DB
-  end_time: string; // ISO string
+  start_time: string;
+  end_time: string;
   color: string;
   event_type: "class" | "exam" | "meeting" | "task";
+  reminder_minutes?: number | null;
 }
 
-export default function SmartSchedulerOverview() {
+interface ReminderToast {
+  id: string;
+  title: string;
+  startTime: string;
+  minutesBefore: number;
+}
+
+/* ──────────────────────────────────────────
+   Constants
+────────────────────────────────────────── */
+const REMINDER_OPTIONS = [
+  { value: 0, label: "No reminder" },
+  { value: 5, label: "5 minutes before" },
+  { value: 10, label: "10 minutes before" },
+  { value: 15, label: "15 minutes before" },
+  { value: 30, label: "30 minutes before" },
+  { value: 60, label: "1 hour before" },
+  { value: 120, label: "2 hours before" },
+  { value: 1440, label: "1 day before" },
+];
+
+const COLOR_OPTIONS = [
+  { value: "blue", label: "Blue", bg: "bg-blue-500" },
+  { value: "purple", label: "Purple", bg: "bg-purple-500" },
+  { value: "green", label: "Green", bg: "bg-green-500" },
+  { value: "orange", label: "Orange", bg: "bg-orange-500" },
+];
+
+/* ──────────────────────────────────────────
+   Component
+────────────────────────────────────────── */
+export default function SmartSchedulerPage() {
   const [currentDate, setCurrentDate] = useState(new Date());
   const [events, setEvents] = useState<EventData[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -54,38 +91,50 @@ export default function SmartSchedulerOverview() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isBulkModalOpen, setIsBulkModalOpen] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [modalMode, setModalMode] = useState<"single" | "recurring">("single");
 
-  // Form State
-  const [activeTab, setActiveTab] = useState<"fixed" | "ai">("fixed");
+  // Notification permission
+  const [notifPermission, setNotifPermission] =
+    useState<NotificationPermission>("default");
 
-  // Fixed Class State
+  // In-app reminder toasts
+  const [toasts, setToasts] = useState<ReminderToast[]>([]);
+  const scheduledReminders = useRef<Set<string>>(new Set());
+  const timerRefs = useRef<Map<string, ReturnType<typeof setTimeout>>>(
+    new Map(),
+  );
+
+  // Single Event Form
+  const [singleEvent, setSingleEvent] = useState({
+    title: "",
+    location: "",
+    description: "",
+    date: format(new Date(), "yyyy-MM-dd"),
+    startTime: "09:00",
+    endTime: "10:30",
+    color: "blue",
+    type: "class" as "class" | "exam" | "meeting" | "task",
+    reminderMinutes: 15,
+  });
+
+  // Fixed (recurring) Class State
   const [fixedClass, setFixedClass] = useState({
     title: "",
     location: "",
-    startDate: format(new Date(), "yyyy-MM-dd"), // Used as the starting week
+    startDate: format(new Date(), "yyyy-MM-dd"),
     startTime: "09:00",
     endTime: "10:30",
     color: "blue",
   });
 
-  // AI Task State
-  const [aiTask, setAiTask] = useState({
-    title: "",
-    duration: 2, // Hours
-    deadlineDate: format(addDays(new Date(), 3), "yyyy-MM-dd"), // Default 3 days later
-    color: "orange",
-  });
-
-  // Calculate the 7 days of the currently viewed week
-  const startDate = startOfWeek(currentDate, { weekStartsOn: 1 }); // Start on Monday
+  // Calendar
+  const startDate = startOfWeek(currentDate, { weekStartsOn: 1 });
   const weekDays = [...Array(7)].map((_, i) => addDays(startDate, i));
-
-  const changeWeek = (offset: number) => {
+  const changeWeek = (offset: number) =>
     setCurrentDate(addDays(currentDate, offset * 7));
-  };
 
-  // Fetch Events from Supabase
-  const fetchEvents = async () => {
+  /* ── Fetch Events ── */
+  const fetchEvents = useCallback(async () => {
     setIsLoading(true);
     const {
       data: { user },
@@ -96,24 +145,116 @@ export default function SmartSchedulerOverview() {
         .select("*")
         .eq("user_id", user.id)
         .order("start_time", { ascending: true });
-
-      if (!error && data) {
-        setEvents(data);
-      }
+      if (!error && data) setEvents(data);
     }
     setIsLoading(false);
-  };
+  }, []);
 
   useEffect(() => {
     fetchEvents();
+  }, [fetchEvents]);
+
+  /* ── Notification Permission ── */
+  useEffect(() => {
+    if ("Notification" in window) {
+      setNotifPermission(Notification.permission);
+    }
   }, []);
 
-  // Handle Form Submission
-  const handleSubmitOptions = async (e: React.FormEvent) => {
+  const requestNotifPermission = async () => {
+    if (!("Notification" in window)) return;
+    const result = await Notification.requestPermission();
+    setNotifPermission(result);
+  };
+
+  /* ── Schedule Browser Reminders for all events ── */
+  const scheduleReminder = useCallback((event: EventData) => {
+    const reminderMin = event.reminder_minutes;
+    if (!reminderMin || reminderMin === 0) return;
+
+    const key = `${event.id}-${reminderMin}`;
+    if (scheduledReminders.current.has(key)) return;
+
+    const eventStart = parseISO(event.start_time);
+    const reminderAt = new Date(eventStart.getTime() - reminderMin * 60 * 1000);
+    const msUntilReminder = reminderAt.getTime() - Date.now();
+
+    if (msUntilReminder < 0) return; // Already past
+
+    scheduledReminders.current.add(key);
+
+    const timer = setTimeout(() => {
+      // 1. Browser notification
+      if ("Notification" in window && Notification.permission === "granted") {
+        new Notification(`⏰ Upcoming: ${event.title}`, {
+          body: `Starts at ${format(eventStart, "HH:mm")} — ${reminderMin < 60 ? `${reminderMin} min` : `${reminderMin / 60}h`} from now${event.location ? ` · ${event.location}` : ""}`,
+          icon: "/favicon.ico",
+          tag: key,
+        });
+      }
+
+      // 2. In-app toast
+      const toast: ReminderToast = {
+        id: key,
+        title: event.title,
+        startTime: format(eventStart, "HH:mm"),
+        minutesBefore: reminderMin,
+      };
+      setToasts((prev) => [...prev, toast]);
+
+      // Auto-dismiss toast after 10s
+      setTimeout(() => {
+        setToasts((prev) => prev.filter((t) => t.id !== key));
+      }, 10000);
+    }, msUntilReminder);
+
+    timerRefs.current.set(key, timer);
+  }, []);
+
+  useEffect(() => {
+    events.forEach(scheduleReminder);
+    // Cleanup on unmount
+    return () => {
+      timerRefs.current.forEach((t) => clearTimeout(t));
+    };
+  }, [events, scheduleReminder]);
+
+  /* ── Submit Form ── */
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsSubmitting(true);
 
-    if (activeTab === "fixed") {
+    if (modalMode === "single") {
+      const result = await addSingleEvent({
+        title: singleEvent.title,
+        location: singleEvent.location,
+        description: singleEvent.description,
+        date: singleEvent.date,
+        startTime: singleEvent.startTime,
+        endTime: singleEvent.endTime,
+        color: singleEvent.color,
+        type: singleEvent.type,
+        reminderMinutes: singleEvent.reminderMinutes,
+      });
+
+      if (result.success) {
+        setIsModalOpen(false);
+        await fetchEvents();
+        setSingleEvent({
+          ...singleEvent,
+          title: "",
+          location: "",
+          description: "",
+        });
+
+        // Prompt notification permission if not granted
+        if (singleEvent.reminderMinutes > 0 && notifPermission !== "granted") {
+          await requestNotifPermission();
+        }
+      } else {
+        alert(result.error);
+      }
+    } else {
       const result = await addFixedClass({
         title: fixedClass.title,
         location: fixedClass.location,
@@ -125,34 +266,8 @@ export default function SmartSchedulerOverview() {
 
       if (result.success) {
         setIsModalOpen(false);
-        fetchEvents();
-        setFixedClass({ ...fixedClass, title: "", location: "" });
-      } else {
-        alert(result.error);
-      }
-    } else {
-      // AI Task
-      const result = await addAITask({
-        title: aiTask.title,
-        durationHours: aiTask.duration,
-        deadlineDate: aiTask.deadlineDate,
-        color: aiTask.color,
-      });
-
-      if (result.success) {
-        setIsModalOpen(false);
-        setAiTask({ ...aiTask, title: "" });
         await fetchEvents();
-        // Navigate the calendar to the AI-scheduled date
-        if (result.ai_start) {
-          const scheduledDate = new Date(result.ai_start);
-          setCurrentDate(scheduledDate);
-        }
-        alert(
-          result.ai_start
-            ? `AI scheduled "${aiTask.title}" on ${format(new Date(result.ai_start), "EEEE, MMM d 'at' HH:mm")}. Calendar navigated to that day!`
-            : `AI scheduled your task! Check the calendar.`,
-        );
+        setFixedClass({ ...fixedClass, title: "", location: "" });
       } else {
         alert(result.error);
       }
@@ -161,46 +276,102 @@ export default function SmartSchedulerOverview() {
     setIsSubmitting(false);
   };
 
-  // Complete/Delete Event
-  const handleCompleteEvent = async (id: string, e?: React.MouseEvent) => {
+  /* ── Delete Event ── */
+  const handleDeleteEvent = async (id: string, e?: React.MouseEvent) => {
     if (e) e.stopPropagation();
     const { error } = await supabase.from("events").delete().eq("id", id);
-    if (!error) {
-      setEvents(events.filter((ev) => ev.id !== id));
-    } else {
-      console.error("Error completing task:", error);
-    }
+    if (!error) setEvents(events.filter((ev) => ev.id !== id));
   };
 
-  // Filter events for the currently selected day (now including Tasks / AI Tasks)
-  const dailyEvents = events.filter((event) =>
-    isSameDay(parseISO(event.start_time), currentDate),
+  /* ── Filters ── */
+  const dailyEvents = events.filter((ev) =>
+    isSameDay(parseISO(ev.start_time), currentDate),
   );
-
-  // Filter floating tasks (Only show tasks that are today or upcoming)
   const currentDateStart = new Date();
   currentDateStart.setHours(0, 0, 0, 0);
-  const floatingTasks = events.filter(
-    (event) =>
-      event.event_type === "task" &&
-      new Date(event.start_time) >= currentDateStart,
-  );
+  const upcomingEvents = events
+    .filter((ev) => new Date(ev.start_time) >= currentDateStart)
+    .slice(0, 8);
 
+  /* ──────────────────────────────────────────
+     Render
+  ────────────────────────────────────────── */
   return (
     <div className="flex h-full font-sans bg-[#fbfcff] relative">
-      {/* 1. Left Panel: Main Schedule Feed */}
+      {/* ── In-App Reminder Toasts ── */}
+      <div className="fixed top-4 right-4 z-[100] flex flex-col gap-2 pointer-events-none">
+        {toasts.map((toast) => (
+          <div
+            key={toast.id}
+            className="pointer-events-auto flex items-start gap-3 bg-white border border-orange-200 shadow-xl rounded-2xl p-4 max-w-[320px] animate-in slide-in-from-right"
+          >
+            <div className="w-9 h-9 bg-orange-100 rounded-xl flex items-center justify-center shrink-0">
+              <BellRing size={16} className="text-orange-500" />
+            </div>
+            <div className="flex-1 min-w-0">
+              <p className="text-[13px] font-bold text-gray-800 truncate">
+                {toast.title}
+              </p>
+              <p className="text-[12px] text-gray-500 mt-0.5">
+                Starts at {toast.startTime} ·{" "}
+                {toast.minutesBefore < 60
+                  ? `${toast.minutesBefore} min`
+                  : `${toast.minutesBefore / 60}h`}{" "}
+                from now
+              </p>
+            </div>
+            <button
+              onClick={() =>
+                setToasts((prev) => prev.filter((t) => t.id !== toast.id))
+              }
+              className="shrink-0 text-gray-300 hover:text-gray-600 transition-colors"
+            >
+              <X size={14} />
+            </button>
+          </div>
+        ))}
+      </div>
+
+      {/* ── Left: Main Schedule ── */}
       <div className="flex-1 flex flex-col pt-6 pr-8">
-        {/* Header Area */}
+        {/* Header */}
         <div className="flex items-end justify-between mb-8">
           <div>
             <h1 className="text-[28px] font-bold text-gray-900 mb-2">
               Smart Scheduler
             </h1>
             <p className="text-[14px] text-gray-500">
-              Manage your academic life seamlessly across week blocks.
+              Manage your academic life · reminders keep you on track.
             </p>
           </div>
           <div className="flex items-center gap-2">
+            {/* Notification permission button */}
+            <button
+              onClick={requestNotifPermission}
+              title={
+                notifPermission === "granted"
+                  ? "Browser notifications enabled"
+                  : notifPermission === "denied"
+                    ? "Notifications blocked — enable in browser settings"
+                    : "Enable browser notifications for reminders"
+              }
+              className={clsx(
+                "p-2.5 rounded-xl border transition-colors",
+                notifPermission === "granted"
+                  ? "border-green-200 bg-green-50 text-green-600"
+                  : notifPermission === "denied"
+                    ? "border-red-200 bg-red-50 text-red-400"
+                    : "border-gray-200 bg-white text-gray-400 hover:text-orange-500 hover:border-orange-300",
+              )}
+            >
+              {notifPermission === "granted" ? (
+                <Bell size={16} />
+              ) : notifPermission === "denied" ? (
+                <BellOff size={16} />
+              ) : (
+                <Bell size={16} />
+              )}
+            </button>
             <button
               onClick={() => setIsBulkModalOpen(true)}
               className="border border-gray-200 bg-white hover:bg-gray-50 text-gray-700 px-4 py-2.5 rounded-xl text-[13px] font-bold shadow-sm transition-colors flex items-center gap-2"
@@ -209,7 +380,10 @@ export default function SmartSchedulerOverview() {
               Import
             </button>
             <button
-              onClick={() => setIsModalOpen(true)}
+              onClick={() => {
+                setIsModalOpen(true);
+                setModalMode("single");
+              }}
               className="bg-[#1a1c20] hover:bg-[#2a2c30] text-white px-5 py-2.5 rounded-xl text-[13px] font-bold shadow-sm transition-colors flex items-center gap-2"
             >
               <Plus size={16} /> New Event
@@ -217,7 +391,7 @@ export default function SmartSchedulerOverview() {
           </div>
         </div>
 
-        {/* Weekly Navigator Slider */}
+        {/* Weekly Navigator */}
         <div className="bg-white border border-gray-100/80 rounded-[24px] p-4 shadow-[0_4px_20px_-10px_rgba(0,0,0,0.04)] mb-8 flex items-center justify-between">
           <button
             onClick={() => changeWeek(-1)}
@@ -225,12 +399,13 @@ export default function SmartSchedulerOverview() {
           >
             <ChevronLeft size={20} />
           </button>
-
           <div className="flex gap-2 sm:gap-4 lg:gap-8 mx-auto overflow-x-auto custom-scrollbar px-2">
             {weekDays.map((date, i) => {
               const isToday = isSameDay(date, new Date());
               const isSelected = isSameDay(date, currentDate);
-
+              const hasEvents = events.some((ev) =>
+                isSameDay(parseISO(ev.start_time), date),
+              );
               return (
                 <button
                   key={i}
@@ -258,16 +433,16 @@ export default function SmartSchedulerOverview() {
                   >
                     {format(date, "d")}
                   </span>
-
-                  {/* Active dot indicator for 'Today' */}
                   {isToday && !isSelected && (
-                    <span className="absolute bottom-2 w-1.5 h-1.5 rounded-full bg-[#fca03e]"></span>
+                    <span className="absolute bottom-2 w-1.5 h-1.5 rounded-full bg-[#fca03e]" />
+                  )}
+                  {hasEvents && !isSelected && (
+                    <span className="absolute bottom-2 w-1 h-1 rounded-full bg-gray-300" />
                   )}
                 </button>
               );
             })}
           </div>
-
           <button
             onClick={() => changeWeek(1)}
             className="p-2 text-gray-400 hover:text-gray-900 hover:bg-gray-50 rounded-lg transition-colors"
@@ -276,11 +451,9 @@ export default function SmartSchedulerOverview() {
           </button>
         </div>
 
-        {/* Dynamic Timeline for Selected Day */}
+        {/* Daily Timeline */}
         <div className="flex-1 bg-white border border-gray-100/80 rounded-[32px] p-8 shadow-[0_4px_30px_-10px_rgba(0,0,0,0.05)] relative overflow-hidden">
-          {/* Subtle background decoration */}
-          <div className="absolute top-0 right-0 w-64 h-64 bg-gradient-to-br from-[#fca03e]/10 to-transparent rounded-bl-[100px] pointer-events-none"></div>
-
+          <div className="absolute top-0 right-0 w-64 h-64 bg-gradient-to-br from-[#fca03e]/10 to-transparent rounded-bl-[100px] pointer-events-none" />
           <div className="mb-8 flex items-center justify-between relative z-10">
             <div>
               <h2 className="text-[20px] font-bold text-gray-900">
@@ -289,18 +462,14 @@ export default function SmartSchedulerOverview() {
               <p className="text-[13px] text-gray-500 mt-1">
                 {isLoading
                   ? "Loading..."
-                  : `${dailyEvents.length} events scheduled`}
+                  : `${dailyEvents.length} event${dailyEvents.length !== 1 ? "s" : ""} scheduled`}
               </p>
             </div>
-
-            <div className="flex items-center gap-2">
-              <span className="px-3 py-1 bg-blue-50 text-blue-600 text-[11px] font-bold uppercase tracking-wide rounded-lg">
-                Daily Timeline
-              </span>
-            </div>
+            <span className="px-3 py-1 bg-blue-50 text-blue-600 text-[11px] font-bold uppercase tracking-wide rounded-lg">
+              Daily Timeline
+            </span>
           </div>
 
-          {/* Daily Hourly Calendar View (6 AM to 00:00) */}
           <div className="relative z-10 h-[500px] overflow-y-auto pr-2 custom-scrollbar">
             {isLoading ? (
               <div className="flex flex-col items-center justify-center p-10 h-64 text-center">
@@ -311,9 +480,7 @@ export default function SmartSchedulerOverview() {
               </div>
             ) : (
               <div className="relative mt-2" style={{ height: `${19 * 80}px` }}>
-                {" "}
-                {/* 6 AM to Midnight (19 slots) */}
-                {/* Background Grid */}
+                {/* Hour gridlines */}
                 {Array.from({ length: 19 }, (_, i) => i + 6).map(
                   (hour, index) => (
                     <div
@@ -330,13 +497,14 @@ export default function SmartSchedulerOverview() {
                       </div>
                       <div className="flex-1 border-t border-gray-100/80 w-full relative">
                         {hour !== 24 && (
-                          <div className="absolute top-1/2 left-0 w-full border-t border-gray-50/50 border-dashed"></div>
+                          <div className="absolute top-1/2 left-0 w-full border-t border-gray-50/50 border-dashed" />
                         )}
                       </div>
                     </div>
                   ),
                 )}
-                {/* Current Time Indicator line */}
+
+                {/* Current time indicator */}
                 {isSameDay(currentDate, new Date()) &&
                   new Date().getHours() >= 6 && (
                     <div
@@ -345,41 +513,31 @@ export default function SmartSchedulerOverview() {
                         top: `${(new Date().getHours() - 6 + new Date().getMinutes() / 60) * 80}px`,
                       }}
                     >
-                      <div className="absolute -left-2 -top-[5px] w-2.5 h-2.5 bg-red-400 rounded-full"></div>
+                      <div className="absolute -left-2 -top-[5px] w-2.5 h-2.5 bg-red-400 rounded-full" />
                     </div>
                   )}
-                {/* Events Container */}
+
+                {/* Events */}
                 <div className="absolute top-0 bottom-0 left-16 right-0 z-10">
                   {dailyEvents.map((event) => {
-                    const startDate = parseISO(event.start_time);
-                    const endDate = parseISO(event.end_time);
-                    const startH = startDate.getHours();
-                    const startM = startDate.getMinutes();
-                    let endH = endDate.getHours();
-                    let endM = endDate.getMinutes();
+                    const evStart = parseISO(event.start_time);
+                    const evEnd = parseISO(event.end_time);
+                    const startH = evStart.getHours();
+                    const startM = evStart.getMinutes();
+                    let endH = evEnd.getHours();
+                    let endM = evEnd.getMinutes();
 
-                    // If event completely before 6 AM
                     if (startH < 6 && endH <= 6 && (endH !== 0 || endM !== 0))
                       return null;
+                    if (endH === 0 && endM === 0 && evEnd > evStart) endH = 24;
 
-                    // Handle events that end exactly at 00:00 (midnight)
-                    if (endH === 0 && endM === 0 && endDate > startDate) {
-                      endH = 24;
-                    }
-
-                    const adjustedStartH = Math.max(startH, 6);
-                    const adjustedStartM = startH < 6 ? 0 : startM;
-                    const topPos =
-                      (adjustedStartH - 6 + adjustedStartM / 60) * 80;
-
-                    const adjustedEndH = Math.min(endH, 24);
-                    let durationHours =
-                      adjustedEndH +
-                      endM / 60 -
-                      (adjustedStartH + adjustedStartM / 60);
-                    if (durationHours <= 0) return null;
-
-                    const heightPos = durationHours * 80;
+                    const adjStartH = Math.max(startH, 6);
+                    const adjStartM = startH < 6 ? 0 : startM;
+                    const topPos = (adjStartH - 6 + adjStartM / 60) * 80;
+                    const adjEndH = Math.min(endH, 24);
+                    const durationH =
+                      adjEndH + endM / 60 - (adjStartH + adjStartM / 60);
+                    if (durationH <= 0) return null;
 
                     const colorConfig =
                       {
@@ -402,31 +560,28 @@ export default function SmartSchedulerOverview() {
                         )}
                         style={{
                           top: `${topPos + 1}px`,
-                          height: `${Math.max(heightPos - 2, 24)}px`,
+                          height: `${Math.max(durationH * 80 - 2, 24)}px`,
                         }}
                       >
                         <h4 className="text-[13px] font-bold truncate leading-tight flex items-start justify-between gap-2">
-                          <span className="truncate">{event.title}</span>
-                          {event.event_type === "task" ? (
-                            <button
-                              onClick={(e) => handleCompleteEvent(event.id, e)}
-                              className="text-gray-400 hover:text-green-600 bg-white/50 hover:bg-green-100 rounded-md p-0.5 opacity-0 group-hover:opacity-100 transition-all border border-transparent hover:border-green-300"
-                              title="Complete Task"
-                            >
-                              <CheckCircle2 size={14} />
-                            </button>
-                          ) : (
-                            <button className="text-gray-400 hover:text-gray-900 opacity-0 group-hover:opacity-100 transition-opacity">
-                              <MoreVertical size={14} />
-                            </button>
-                          )}
+                          <span className="truncate flex items-center gap-1">
+                            {event.reminder_minutes ? (
+                              <Bell size={10} className="shrink-0 opacity-60" />
+                            ) : null}
+                            {event.title}
+                          </span>
+                          <button
+                            onClick={(e) => handleDeleteEvent(event.id, e)}
+                            className="text-gray-400 hover:text-red-500 bg-white/50 hover:bg-red-50 rounded-md p-0.5 opacity-0 group-hover:opacity-100 transition-all border border-transparent hover:border-red-200"
+                          >
+                            <X size={12} />
+                          </button>
                         </h4>
-                        {/* Only show details if card is tall enough */}
-                        {durationHours >= 0.75 && (
+                        {durationH >= 0.75 && (
                           <div className="mt-1">
                             <p className="text-[11px] font-medium opacity-80 mt-0.5 truncate flex items-center gap-1">
-                              {format(startDate, "HH:mm")} -{" "}
-                              {format(endDate, "HH:mm")}
+                              {format(evStart, "HH:mm")} –{" "}
+                              {format(evEnd, "HH:mm")}
                             </p>
                             {event.location && (
                               <p className="text-[11px] font-medium opacity-80 mt-0.5 truncate flex items-center gap-1">
@@ -445,10 +600,10 @@ export default function SmartSchedulerOverview() {
         </div>
       </div>
 
-      {/* 2. Right Panel: Utility Sidebar (Calendar Mini, Tasks) */}
+      {/* ── Right Sidebar ── */}
       <div className="w-80 bg-white border-l border-gray-100/80 p-6 flex flex-col pt-10">
-        {/* Simple Mini Month Calendar Placeholder */}
-        <div className="mb-10">
+        {/* Mini Month Calendar */}
+        <div className="mb-8">
           <h3 className="text-[14px] font-bold text-gray-900 mb-4 flex justify-between items-center">
             <span>{format(currentDate, "MMMM yyyy")}</span>
             <div className="flex gap-2">
@@ -477,25 +632,24 @@ export default function SmartSchedulerOverview() {
               const monthEnd = endOfMonth(currentDate);
               const startDateMonth = startOfWeek(monthStart, {
                 weekStartsOn: 0,
-              }); // Sunday
+              });
               const endDateMonth = endOfWeek(monthEnd, { weekStartsOn: 0 });
-
-              const calendarDays = eachDayOfInterval({
+              return eachDayOfInterval({
                 start: startDateMonth,
                 end: endDateMonth,
-              });
-
-              return calendarDays.map((date, i) => {
+              }).map((date, i) => {
                 const isSelected = isSameDay(date, currentDate);
                 const isCurrentMonth =
                   date.getMonth() === currentDate.getMonth();
-
+                const hasEv = events.some((ev) =>
+                  isSameDay(parseISO(ev.start_time), date),
+                );
                 return (
                   <div
                     key={i}
                     onClick={() => setCurrentDate(date)}
                     className={clsx(
-                      "w-8 h-8 flex items-center justify-center rounded-lg text-[12px] font-medium mx-auto cursor-pointer transition-colors",
+                      "w-8 h-8 flex flex-col items-center justify-center rounded-lg text-[12px] font-medium mx-auto cursor-pointer transition-colors relative",
                       !isCurrentMonth
                         ? "text-gray-300"
                         : isSelected
@@ -504,6 +658,9 @@ export default function SmartSchedulerOverview() {
                     )}
                   >
                     {format(date, "d")}
+                    {hasEv && !isSelected && isCurrentMonth && (
+                      <span className="absolute bottom-0.5 w-1 h-1 rounded-full bg-blue-400" />
+                    )}
                   </div>
                 );
               });
@@ -511,61 +668,75 @@ export default function SmartSchedulerOverview() {
           </div>
         </div>
 
-        {/* Floating Tasks (Not tied to specific time) */}
+        {/* Upcoming Events */}
         <div>
           <div className="flex justify-between items-center mb-4">
             <h3 className="text-[14px] font-bold text-gray-900">
-              Upcoming Tasks
+              Upcoming Events
             </h3>
-            <button className="text-[12px] font-bold text-[#38bcfc] hover:underline">
-              See all
-            </button>
           </div>
-
-          <div className="space-y-3">
-            {floatingTasks.length === 0 ? (
+          <div className="space-y-2.5">
+            {upcomingEvents.length === 0 ? (
               <p className="text-[12px] text-gray-400 px-1">
-                No floating tasks. Add a 'task' event!
+                No upcoming events.
               </p>
             ) : (
-              floatingTasks.map((task) => (
-                <div
-                  key={task.id}
-                  onClick={(e) => handleCompleteEvent(task.id, e)}
-                  title="Click to complete"
-                  className="flex items-start gap-3 p-3 rounded-xl border border-gray-100 hover:shadow-md transition-shadow group cursor-pointer bg-white overflow-hidden relative"
-                >
-                  <div className="absolute inset-0 bg-green-500 opacity-0 group-hover:opacity-5 transition-opacity" />
-                  <div className="mt-0.5 w-4 h-4 rounded border border-gray-300 group-hover:bg-green-100 group-hover:border-green-300 flex items-center justify-center shrink-0">
-                    <CheckCircle2
-                      size={12}
-                      className="text-transparent group-hover:text-green-500 transition-colors"
+              upcomingEvents.map((ev) => {
+                const colorDot =
+                  {
+                    blue: "bg-blue-500",
+                    orange: "bg-orange-500",
+                    green: "bg-green-500",
+                    purple: "bg-purple-500",
+                  }[ev.color] || "bg-gray-400";
+                return (
+                  <div
+                    key={ev.id}
+                    className="flex items-start gap-3 p-3 rounded-xl border border-gray-100 hover:shadow-md transition-shadow group cursor-default bg-white"
+                  >
+                    <div
+                      className={clsx(
+                        "w-2.5 h-2.5 rounded-full shrink-0 mt-1.5",
+                        colorDot,
+                      )}
                     />
+                    <div className="flex-1 min-w-0">
+                      <h4 className="text-[13px] font-bold text-gray-800 truncate flex items-center gap-1">
+                        {ev.reminder_minutes ? (
+                          <Bell
+                            size={10}
+                            className="text-orange-400 shrink-0"
+                          />
+                        ) : null}
+                        {ev.title}
+                      </h4>
+                      <p className="text-[11px] text-gray-500 mt-0.5 flex items-center gap-1">
+                        <Clock size={10} />{" "}
+                        {format(parseISO(ev.start_time), "EEE, MMM d · HH:mm")}
+                      </p>
+                    </div>
+                    <button
+                      onClick={(e) => handleDeleteEvent(ev.id, e)}
+                      className="text-gray-200 hover:text-red-400 opacity-0 group-hover:opacity-100 transition-all shrink-0 mt-0.5"
+                    >
+                      <X size={13} />
+                    </button>
                   </div>
-                  <div className="flex-1 min-w-0">
-                    <h4 className="text-[13px] font-bold text-gray-800 truncate">
-                      {task.title}
-                    </h4>
-                    <p className="text-[11px] text-gray-500 mt-1 flex items-center gap-1">
-                      <Clock size={10} />{" "}
-                      {format(parseISO(task.start_time), "MMM do, HH:mm")}
-                    </p>
-                  </div>
-                </div>
-              ))
+                );
+              })
             )}
           </div>
         </div>
       </div>
 
-      {/* MODAL OVERLAY FOR ADDING NEW EVENT */}
+      {/* ── New Event Modal ── */}
       {isModalOpen && (
         <div className="fixed inset-0 bg-gray-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-          <div className="bg-white rounded-[32px] shadow-2xl w-full max-w-[550px] overflow-hidden">
+          <div className="bg-white rounded-[32px] shadow-2xl w-full max-w-[560px] overflow-hidden">
+            {/* Modal header */}
             <div className="p-6 border-b border-gray-100 flex justify-between items-center bg-gray-50/50">
               <h2 className="text-[20px] font-bold text-gray-900 flex items-center gap-2">
-                <CalendarIcon size={20} className="text-[#38bcfc]" /> Add to
-                Master Schedule
+                <CalendarIcon size={20} className="text-[#38bcfc]" /> New Event
               </h2>
               <button
                 onClick={() => setIsModalOpen(false)}
@@ -575,46 +746,232 @@ export default function SmartSchedulerOverview() {
               </button>
             </div>
 
-            {/* TABS */}
+            {/* Mode toggle */}
             <div className="flex bg-gray-50/80 p-2 mx-6 mt-6 rounded-[16px] border border-gray-100">
               <button
-                onClick={() => setActiveTab("fixed")}
+                onClick={() => setModalMode("single")}
                 className={clsx(
                   "flex-1 py-2.5 text-[14px] font-bold rounded-xl transition-all",
-                  activeTab === "fixed"
+                  modalMode === "single"
                     ? "bg-white text-[#38bcfc] shadow-sm border border-gray-100"
                     : "text-gray-500 hover:text-gray-900",
                 )}
               >
-                Matkul Tetap / Fixed Class
+                Single Event
               </button>
               <button
-                onClick={() => setActiveTab("ai")}
+                onClick={() => setModalMode("recurring")}
                 className={clsx(
-                  "flex-1 py-2.5 text-[14px] font-bold rounded-xl transition-all flex items-center justify-center gap-2",
-                  activeTab === "ai"
-                    ? "bg-white text-[#fca03e] shadow-sm border border-gray-100"
+                  "flex-1 py-2.5 text-[14px] font-bold rounded-xl transition-all",
+                  modalMode === "recurring"
+                    ? "bg-white text-[#38bcfc] shadow-sm border border-gray-100"
                     : "text-gray-500 hover:text-gray-900",
                 )}
               >
-                AI Smart Planner
+                Weekly Class (16 wks)
               </button>
             </div>
 
-            <form onSubmit={handleSubmitOptions} className="p-6 pt-5 space-y-5">
-              {/* === TAB 1: Matkul Tetap === */}
-              {activeTab === "fixed" && (
+            <form onSubmit={handleSubmit} className="p-6 pt-5 space-y-4">
+              {/* ── SINGLE EVENT ── */}
+              {modalMode === "single" && (
                 <>
-                  <div className="p-3 bg-blue-50/50 border border-blue-100/50 rounded-xl mb-4">
+                  {/* Title + Type */}
+                  <div className="grid grid-cols-[1fr_auto] gap-3">
+                    <div className="space-y-1.5">
+                      <label className="text-[13px] font-bold text-gray-700 ml-1">
+                        Event Title
+                      </label>
+                      <input
+                        type="text"
+                        required
+                        value={singleEvent.title}
+                        onChange={(e) =>
+                          setSingleEvent({
+                            ...singleEvent,
+                            title: e.target.value,
+                          })
+                        }
+                        className="w-full bg-[#f8f9fc] border border-gray-200 text-gray-900 text-[14px] rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-[#38bcfc]/50 focus:border-[#38bcfc]"
+                        placeholder="e.g. Algorithm Midterm"
+                      />
+                    </div>
+                    <div className="space-y-1.5">
+                      <label className="text-[13px] font-bold text-gray-700 ml-1">
+                        Type
+                      </label>
+                      <select
+                        value={singleEvent.type}
+                        onChange={(e) =>
+                          setSingleEvent({
+                            ...singleEvent,
+                            type: e.target.value as any,
+                          })
+                        }
+                        className="bg-[#f8f9fc] border border-gray-200 text-gray-900 text-[14px] rounded-xl px-3 py-3 focus:outline-none h-[50px]"
+                      >
+                        <option value="class">Class</option>
+                        <option value="exam">Exam</option>
+                        <option value="meeting">Meeting</option>
+                        <option value="task">Task</option>
+                      </select>
+                    </div>
+                  </div>
+
+                  {/* Date + Location */}
+                  <div className="grid grid-cols-2 gap-3">
+                    <div className="space-y-1.5">
+                      <label className="text-[13px] font-bold text-gray-700 ml-1">
+                        Date
+                      </label>
+                      <input
+                        type="date"
+                        required
+                        value={singleEvent.date}
+                        onChange={(e) =>
+                          setSingleEvent({
+                            ...singleEvent,
+                            date: e.target.value,
+                          })
+                        }
+                        className="w-full bg-[#f8f9fc] border border-gray-200 text-gray-900 text-[14px] rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-[#38bcfc]/50 focus:border-[#38bcfc]"
+                      />
+                    </div>
+                    <div className="space-y-1.5">
+                      <label className="text-[13px] font-bold text-gray-700 ml-1">
+                        Location
+                      </label>
+                      <input
+                        type="text"
+                        value={singleEvent.location}
+                        onChange={(e) =>
+                          setSingleEvent({
+                            ...singleEvent,
+                            location: e.target.value,
+                          })
+                        }
+                        className="w-full bg-[#f8f9fc] border border-gray-200 text-gray-900 text-[14px] rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-[#38bcfc]/50 focus:border-[#38bcfc]"
+                        placeholder="Room A / Online"
+                      />
+                    </div>
+                  </div>
+
+                  {/* Start Time + End Time + Color */}
+                  <div className="grid grid-cols-3 gap-3">
+                    <div className="space-y-1.5">
+                      <label className="text-[13px] font-bold text-gray-700 ml-1">
+                        Start
+                      </label>
+                      <input
+                        type="time"
+                        required
+                        value={singleEvent.startTime}
+                        onChange={(e) =>
+                          setSingleEvent({
+                            ...singleEvent,
+                            startTime: e.target.value,
+                          })
+                        }
+                        className="w-full bg-[#f8f9fc] border border-gray-200 text-gray-900 text-[14px] rounded-xl px-4 py-3 focus:outline-none"
+                      />
+                    </div>
+                    <div className="space-y-1.5">
+                      <label className="text-[13px] font-bold text-gray-700 ml-1">
+                        End
+                      </label>
+                      <input
+                        type="time"
+                        required
+                        value={singleEvent.endTime}
+                        onChange={(e) =>
+                          setSingleEvent({
+                            ...singleEvent,
+                            endTime: e.target.value,
+                          })
+                        }
+                        className="w-full bg-[#f8f9fc] border border-gray-200 text-gray-900 text-[14px] rounded-xl px-4 py-3 focus:outline-none"
+                      />
+                    </div>
+                    <div className="space-y-1.5">
+                      <label className="text-[13px] font-bold text-gray-700 ml-1">
+                        Color
+                      </label>
+                      <select
+                        value={singleEvent.color}
+                        onChange={(e) =>
+                          setSingleEvent({
+                            ...singleEvent,
+                            color: e.target.value,
+                          })
+                        }
+                        className="w-full bg-[#f8f9fc] border border-gray-200 text-gray-900 text-[14px] rounded-xl px-4 py-3 focus:outline-none"
+                      >
+                        {COLOR_OPTIONS.map((c) => (
+                          <option key={c.value} value={c.value}>
+                            {c.label}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                  </div>
+
+                  {/* Reminder */}
+                  <div className="space-y-1.5">
+                    <label className="text-[13px] font-bold text-gray-700 ml-1 flex items-center gap-1.5">
+                      <Bell size={13} className="text-orange-400" /> Reminder
+                    </label>
+                    <div className="grid grid-cols-4 gap-2">
+                      {REMINDER_OPTIONS.map((opt) => (
+                        <button
+                          key={opt.value}
+                          type="button"
+                          onClick={() =>
+                            setSingleEvent({
+                              ...singleEvent,
+                              reminderMinutes: opt.value,
+                            })
+                          }
+                          className={clsx(
+                            "py-2 px-2 rounded-xl text-[12px] font-semibold border-2 transition-all text-center",
+                            singleEvent.reminderMinutes === opt.value
+                              ? "border-orange-400 bg-orange-50 text-orange-700"
+                              : "border-gray-100 bg-gray-50 text-gray-500 hover:border-gray-300",
+                          )}
+                        >
+                          {opt.value === 0
+                            ? "None"
+                            : opt.label.replace(" before", "")}
+                        </button>
+                      ))}
+                    </div>
+                    {singleEvent.reminderMinutes > 0 &&
+                      notifPermission !== "granted" && (
+                        <div className="flex items-center gap-2 mt-2 px-3 py-2 bg-amber-50 border border-amber-200 rounded-xl">
+                          <Bell size={13} className="text-amber-500 shrink-0" />
+                          <p className="text-[12px] text-amber-700 font-medium">
+                            {notifPermission === "denied"
+                              ? "Notifications blocked. Enable in browser settings for Chrome reminders, but in-app toasts will still work."
+                              : "Browser notifications will be requested on save. In-app toasts are always on."}
+                          </p>
+                        </div>
+                      )}
+                  </div>
+                </>
+              )}
+
+              {/* ── RECURRING ── */}
+              {modalMode === "recurring" && (
+                <>
+                  <div className="p-3 bg-blue-50/50 border border-blue-100/50 rounded-xl">
                     <p className="text-[12px] font-medium text-blue-700">
-                      💡 This will generate repeating weekly classes for the
-                      entire semester (16 weeks) starting from the date you
-                      pick.
+                      💡 Generates repeating weekly events for 16 weeks (full
+                      semester) starting from the date you pick.
                     </p>
                   </div>
+
                   <div className="space-y-1.5">
                     <label className="text-[13px] font-bold text-gray-700 ml-1">
-                      Class/Course Name
+                      Class / Course Name
                     </label>
                     <input
                       type="text"
@@ -627,7 +984,8 @@ export default function SmartSchedulerOverview() {
                       placeholder="e.g. Physics 101 Lecture"
                     />
                   </div>
-                  <div className="grid grid-cols-2 gap-4">
+
+                  <div className="grid grid-cols-2 gap-3">
                     <div className="space-y-1.5">
                       <label className="text-[13px] font-bold text-gray-700 ml-1">
                         Start Date (Week 1)
@@ -664,7 +1022,7 @@ export default function SmartSchedulerOverview() {
                     </div>
                   </div>
 
-                  <div className="grid grid-cols-3 gap-4">
+                  <div className="grid grid-cols-3 gap-3">
                     <div className="space-y-1.5">
                       <label className="text-[13px] font-bold text-gray-700 ml-1">
                         Start Time
@@ -701,7 +1059,7 @@ export default function SmartSchedulerOverview() {
                     </div>
                     <div className="space-y-1.5">
                       <label className="text-[13px] font-bold text-gray-700 ml-1">
-                        Card Color
+                        Color
                       </label>
                       <select
                         value={fixedClass.color}
@@ -713,83 +1071,19 @@ export default function SmartSchedulerOverview() {
                         }
                         className="w-full bg-[#f8f9fc] border border-gray-200 text-gray-900 text-[14px] rounded-xl px-4 py-3 focus:outline-none"
                       >
-                        <option value="blue">Blue</option>
-                        <option value="purple">Purple</option>
-                        <option value="green">Green</option>
+                        {COLOR_OPTIONS.map((c) => (
+                          <option key={c.value} value={c.value}>
+                            {c.label}
+                          </option>
+                        ))}
                       </select>
                     </div>
                   </div>
                 </>
               )}
 
-              {/* === TAB 2: AI Smart Task === */}
-              {activeTab === "ai" && (
-                <>
-                  <div className="p-3 bg-orange-50/50 border border-orange-100/50 rounded-xl mb-4 flex items-start gap-2">
-                    <span className="text-[16px] py-0.5">✨</span>
-                    <p className="text-[12px] font-medium text-orange-800">
-                      Input your Task and Deadline. <b>Gemini AI</b> will
-                      automatically scan your schedule, find a free slot of time
-                      that does NOT overlap with your Fixed Classes, and assign
-                      the task for you.
-                    </p>
-                  </div>
-                  <div className="space-y-1.5">
-                    <label className="text-[13px] font-bold text-gray-700 ml-1">
-                      Task/Assignment Name
-                    </label>
-                    <input
-                      type="text"
-                      required
-                      value={aiTask.title}
-                      onChange={(e) =>
-                        setAiTask({ ...aiTask, title: e.target.value })
-                      }
-                      className="w-full bg-[#f8f9fc] border border-gray-200 text-gray-900 text-[14px] rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-[#fca03e]/50 focus:border-[#fca03e]"
-                      placeholder="e.g. Calculus Chapter 3 Essay"
-                    />
-                  </div>
-
-                  <div className="grid grid-cols-2 gap-4">
-                    <div className="space-y-1.5">
-                      <label className="text-[13px] font-bold text-gray-700 ml-1">
-                        Est. Duration (Hours)
-                      </label>
-                      <input
-                        type="number"
-                        required
-                        min={0.5}
-                        step={0.5}
-                        value={aiTask.duration}
-                        onChange={(e) =>
-                          setAiTask({
-                            ...aiTask,
-                            duration: parseFloat(e.target.value),
-                          })
-                        }
-                        className="w-full bg-[#f8f9fc] border border-gray-200 text-gray-900 text-[14px] rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-[#fca03e]/50 focus:border-[#fca03e]"
-                      />
-                    </div>
-                    <div className="space-y-1.5">
-                      <label className="text-[13px] font-bold text-gray-700 ml-1">
-                        Deadline Date
-                      </label>
-                      <input
-                        type="date"
-                        required
-                        value={aiTask.deadlineDate}
-                        onChange={(e) =>
-                          setAiTask({ ...aiTask, deadlineDate: e.target.value })
-                        }
-                        className="w-full bg-[#f8f9fc] border border-gray-200 text-gray-900 text-[14px] rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-[#fca03e]/50 focus:border-[#fca03e]"
-                      />
-                    </div>
-                  </div>
-                </>
-              )}
-
-              {/* Action Buttons */}
-              <div className="pt-4 flex gap-3">
+              {/* Actions */}
+              <div className="pt-2 flex gap-3">
                 <button
                   type="button"
                   onClick={() => setIsModalOpen(false)}
@@ -800,19 +1094,19 @@ export default function SmartSchedulerOverview() {
                 <button
                   type="submit"
                   disabled={isSubmitting}
-                  className={clsx(
-                    "flex-[2] py-3.5 rounded-xl transition-all flex items-center justify-center font-bold text-[14px] disabled:opacity-70 disabled:cursor-not-allowed shadow-md text-white",
-                    activeTab === "fixed"
-                      ? "bg-[#38bcfc] hover:bg-[#20aaf0]"
-                      : "bg-[#fca03e] hover:bg-[#ffb05c] text-[#1a1c20]",
-                  )}
+                  className="flex-[2] py-3.5 rounded-xl transition-all flex items-center justify-center font-bold text-[14px] disabled:opacity-70 disabled:cursor-not-allowed shadow-md text-white bg-[#38bcfc] hover:bg-[#20aaf0]"
                 >
                   {isSubmitting ? (
                     <Loader2 className="w-5 h-5 animate-spin" />
-                  ) : activeTab === "fixed" ? (
-                    "Setup Semester Schedule"
+                  ) : modalMode === "single" ? (
+                    <>
+                      <CheckCircle2 size={16} className="mr-2" />
+                      {singleEvent.reminderMinutes > 0
+                        ? "Save with Reminder"
+                        : "Save Event"}
+                    </>
                   ) : (
-                    "Plan with AI"
+                    "Setup Semester Schedule"
                   )}
                 </button>
               </div>
