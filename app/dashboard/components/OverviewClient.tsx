@@ -543,24 +543,14 @@ export default function OverviewClient({
           <div className="flex flex-col items-center md:items-end gap-2 shrink-0">
             <div className="flex gap-3">
               <Link
-                href="/dashboard/scanner"
+                href="/dashboard/ai-workspace"
                 className="inline-flex items-center gap-2 bg-white/10 hover:bg-white/15 border border-white/10 text-white px-5 py-2.5 rounded-xl text-[13px] font-semibold transition-all"
               >
                 <Camera size={14} />
                 Scan Photo
               </Link>
-              <Link
-                href="/dashboard/assistant"
-                className="inline-flex items-center gap-2 bg-white text-gray-900 px-5 py-2.5 rounded-xl text-[13px] font-bold hover:bg-gray-100 transition-all shadow-sm"
-              >
-                <BrainCircuit size={14} />
-                Start Chat
-                <ArrowRight size={13} />
-              </Link>
             </div>
-            <p className="text-[10px] text-gray-600 mt-1">
-              Powered by Google Gemini
-            </p>
+            
           </div>
         </div>
       </div>
