@@ -1,9 +1,11 @@
 "use client";
 
-import { Check, Clock } from "lucide-react";
+import { Check, Clock, LayoutDashboard } from "lucide-react";
 import Logoedu from "@/public/images/logoedunai.svg";
 import Image from "next/image";
-const Hero = () => {
+import Link from "next/link";
+
+const Hero = ({ isLoggedIn = false }: { isLoggedIn?: boolean }) => {
   return (
     <section className="relative pt-[70px] pb-32 overflow-hidden px-4 md:px-6">
       <div className="max-w-[1400px] mx-auto min-h-[700px] rounded-[40px] dot-pattern relative flex flex-col items-center justify-center py-40 px-4 shadow-[0_0_0_1px_rgba(0,0,0,0.05)] bg-[#fbfbfb]">
@@ -25,9 +27,21 @@ const Hero = () => {
           and collaborate on projects with AI task breakdowns.
         </p>
 
-        <button className="mt-10 px-8 py-4 bg-primary text-white rounded-[16px] text-[15px] font-semibold hover:opacity-95 transition-all shadow-[0_8px_20px_-6px_rgba(45,115,255,0.4)] z-10">
-          Get free demo
-        </button>
+        {isLoggedIn ? (
+          <Link
+            href="/dashboard"
+            className="mt-10 px-8 py-4 bg-[#1a1c20] text-white rounded-[16px] text-[15px] font-semibold hover:bg-gray-800 transition-all shadow-md z-10 flex items-center gap-2"
+          >
+            Dashboard <LayoutDashboard size={18} />
+          </Link>
+        ) : (
+          <Link
+            href="/register"
+            className="mt-10 px-8 py-4 bg-primary text-white rounded-[16px] text-[15px] font-semibold hover:opacity-95 transition-all shadow-[0_8px_20px_-6px_rgba(45,115,255,0.4)] z-10 inline-block"
+          >
+            Get free demo
+          </Link>
+        )}
 
         {/* 1. TOP LEFT: AI Board Scanner */}
         <div className="absolute top-[12%] left-[4%] lg:left-[8%] hidden lg:block z-0">

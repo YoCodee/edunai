@@ -1,3 +1,4 @@
+import { createClient } from "@/utils/supabase/server";
 import Navbar from "@/components/layout/Navbar";
 import Hero from "@/components/sections/Hero";
 import BeforeAfter from "@/components/sections/BeforeAfter";
@@ -8,13 +9,19 @@ import Testimonials from "@/components/sections/Testimonials";
 import Footer from "@/components/sections/Footer";
 import BackgroundOrbs from "@/components/ui/BackgroundOrbs";
 
-export default function Home() {
+export default async function Home() {
+  const supabase = await createClient();
+  const {
+    data: { session },
+  } = await supabase.auth.getSession();
+  const isLoggedIn = !!session?.user;
+
   return (
     <div className="relative min-h-screen bg-background overflow-hidden selection:bg-primary/30">
       <BackgroundOrbs />
       <Navbar />
       <main>
-        <Hero />
+        <Hero isLoggedIn={isLoggedIn} />
         <BeforeAfter />
         <Solutions />
         <OfferSection />
