@@ -79,11 +79,10 @@ export default function Testimonials() {
     const tl = gsap.timeline({
       scrollTrigger: {
         trigger: sectionRef.current,
-        start: "top 60%", 
+        start: "top 70%", // Animasi mulai saat ujung atas section mencapai 70% tinggi layar dari atas (hampir dekat bawah)
         toggleActions: "play none none none",
       },
     });
-
 
     tl.to(flapRef.current, {
       rotationX: -180,
@@ -91,13 +90,11 @@ export default function Testimonials() {
       ease: "power2.inOut",
     });
 
-
     tl.to(
       centerCardRef.current,
       { y: -30, scale: 1, opacity: 1, duration: 0.8, ease: "back.out(1.2)" },
       "-=0.2",
     );
-
 
     tl.to(
       envelopeRef.current,
@@ -105,7 +102,6 @@ export default function Testimonials() {
       "+=0.2",
     );
 
-    
     tl.to(
       leftCardRef.current,
       {
@@ -130,7 +126,6 @@ export default function Testimonials() {
       },
       "<",
     );
-
 
     tl.to(controlsRef.current, { opacity: 1, y: 0, duration: 0.4 }, "-=0.4");
 
@@ -162,7 +157,6 @@ export default function Testimonials() {
       className="bg-[#fbfcff] py-24 min-h-screen relative overflow-hidden font-sans border-t border-gray-100 flex flex-col justify-center"
     >
       <div className="max-w-[1200px] mx-auto px-6 relative z-10 flex flex-col items-center w-full">
-       
         <div className="text-center mb-10 w-full">
           <h2 className="text-[44px] md:text-[60px] font-bold tracking-tight text-[#1a1c20] mb-4">
             Words of Appreciation
@@ -173,12 +167,10 @@ export default function Testimonials() {
           </p>
         </div>
 
-      
         <div
           ref={containerRef}
           className="relative w-full max-w-[1000px] h-[550px] flex items-center justify-center mt-12"
         >
-       
           <div
             ref={leftCardRef}
             className="absolute inset-0 m-auto w-[340px] h-[380px] pointer-events-none"
@@ -192,7 +184,6 @@ export default function Testimonials() {
             <TestimonialCard data={getCardData(1)} />
           </div>
 
-          
           <div
             ref={centerCardRef}
             className="absolute inset-0 m-auto w-[340px] h-[380px]"
@@ -200,7 +191,6 @@ export default function Testimonials() {
             <TestimonialCard data={getCardData(0)} active />
           </div>
 
-      
           <div
             ref={controlsRef}
             className="absolute -bottom-7 left-0 right-0 flex justify-center gap-4 z-50"
@@ -219,12 +209,10 @@ export default function Testimonials() {
             </button>
           </div>
 
-          
           <div
             ref={envelopeRef}
             className="absolute bottom-[0%] left-1/2 -translate-x-1/2 w-[440px] h-[280px] z-40 pointer-events-none"
           >
-        
             <svg
               width="440"
               height="280"
@@ -239,7 +227,6 @@ export default function Testimonials() {
               />
             </svg>
 
-         
             <svg
               width="440"
               height="200"
@@ -251,7 +238,6 @@ export default function Testimonials() {
               <path ref={flapRef} d="M0 80L220 200L440 80H0Z" fill="#9f75ff" />
             </svg>
 
-        
             <svg
               width="440"
               height="280"
