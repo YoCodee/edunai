@@ -60,10 +60,12 @@ export default function CreateRoadmapModal({
   // AI from Notes
   const [selectedNoteIds, setSelectedNoteIds] = useState<string[]>([]);
 
-  // Manual
-  const [manualUnits, setManualUnits] = useState<
-    { title: string; summary: string }[]
-  >([{ title: "", summary: "" }]);
+  // Manual - layers with multiple units per layer
+  type ManualUnit = { title: string; summary: string };
+  type ManualLayer = { units: ManualUnit[] };
+  const [manualLayers, setManualLayers] = useState<ManualLayer[]>([
+    { units: [{ title: "", summary: "" }] },
+  ]);
 
   const tabs: { id: TabType; label: string; icon: React.ElementType }[] = [
     { id: "ai-topic", label: "AI dari Topik", icon: Sparkles },
@@ -109,14 +111,26 @@ export default function CreateRoadmapModal({
           emoji
         );
       } else {
-        // Manual
+        // Manual - flatten layers to units with position info
         if (!title.trim()) {
           setError("Judul roadmap harus diisi");
           setIsLoading(false);
           return;
         }
-        const validUnits = manualUnits.filter((u) => u.title.trim());
-        if (validUnits.length === 0) {
+        const unitsWithPositions: { title: string; summary: string; positionY: number; positionX: number }[] = [];
+        manualLayers.forEach((layer, layerIdx) => {
+          layer.units.forEach((unit, unitIdx) => {
+            if (unit.title.trim()) {
+              unitsWithPositions.push({
+                title: unit.title.trim(),
+                summary: unit.summary.trim(),
+                positionY: layerIdx,
+                positionX: unitIdx,
+              });
+            }
+          });
+        });
+        if (unitsWithPositions.length === 0) {
           setError("Tambahkan minimal 1 unit");
           setIsLoading(false);
           return;
@@ -126,7 +140,7 @@ export default function CreateRoadmapModal({
           description,
           subjectType,
           emoji,
-          validUnits
+          unitsWithPositions
         );
       }
 
@@ -150,21 +164,51 @@ export default function CreateRoadmapModal({
     );
   };
 
-  const addManualUnit = () => {
-    setManualUnits((prev) => [...prev, { title: "", summary: "" }]);
+  const addManualLayer = () => {
+    setManualLayers((prev) => [...prev, { units: [{ title: "", summary: "" }] }]);
   };
 
-  const removeManualUnit = (index: number) => {
-    setManualUnits((prev) => prev.filter((_, i) => i !== index));
+  const addUnitToLayer = (layerIndex: number) => {
+    setManualLayers((prev) =>
+      prev.map((layer, idx) =>
+        idx === layerIndex
+          ? { ...layer, units: [...layer.units, { title: "", summary: "" }] }
+          : layer
+      )
+    );
+  };
+
+  const removeLayer = (layerIndex: number) => {
+    setManualLayers((prev) => prev.filter((_, idx) => idx !== layerIndex));
+  };
+
+  const removeUnitFromLayer = (layerIndex: number, unitIndex: number) => {
+    setManualLayers((prev) =>
+      prev.map((layer, idx) =>
+        idx === layerIndex
+          ? { ...layer, units: layer.units.filter((_, ui) => ui !== unitIndex) }
+          : layer
+      )
+    );
   };
 
   const updateManualUnit = (
-    index: number,
+    layerIndex: number,
+    unitIndex: number,
     field: "title" | "summary",
     value: string
   ) => {
-    setManualUnits((prev) =>
-      prev.map((u, i) => (i === index ? { ...u, [field]: value } : u))
+    setManualLayers((prev) =>
+      prev.map((layer, li) =>
+        li === layerIndex
+          ? {
+              ...layer,
+              units: layer.units.map((u, ui) =>
+                ui === unitIndex ? { ...u, [field]: value } : u
+              ),
+            }
+          : layer
+      )
     );
   };
 
@@ -385,55 +429,104 @@ export default function CreateRoadmapModal({
           {activeTab === "manual" && (
             <div>
               <label className="block text-[13px] font-semibold text-gray-700 mb-2">
-                Unit Pembelajaran
+                Unit Pembelajaran (per Level)
               </label>
-              <div className="space-y-3 max-h-[250px] overflow-y-auto">
-                {manualUnits.map((unit, index) => (
+              <p className="text-[12px] text-gray-400 mb-3">
+                Setiap level bisa memiliki beberapa unit paralel. Unit di level berikutnya akan terkunci sampai semua unit di level sebelumnya selesai.
+              </p>
+              <div className="space-y-4 max-h-[300px] overflow-y-auto pr-1">
+                {manualLayers.map((layer, layerIndex) => (
                   <div
-                    key={index}
+                    key={layerIndex}
                     className="bg-gray-50 rounded-xl p-3 border border-gray-100"
                   >
-                    <div className="flex items-center gap-2 mb-2">
-                      <span className="w-6 h-6 bg-white rounded-lg text-[12px] font-bold text-gray-500 flex items-center justify-center border border-gray-200">
-                        {index + 1}
-                      </span>
-                      <input
-                        type="text"
-                        value={unit.title}
-                        onChange={(e) =>
-                          updateManualUnit(index, "title", e.target.value)
-                        }
-                        placeholder="Judul unit"
-                        className="flex-1 px-3 py-1.5 rounded-lg border border-gray-200 text-[13px] focus:border-indigo-400 outline-none"
-                      />
-                      {manualUnits.length > 1 && (
+                    {/* Layer Header */}
+                    <div className="flex items-center justify-between mb-3">
+                      <div className="flex items-center gap-2">
+                        <span className="w-7 h-7 bg-indigo-100 rounded-lg text-[12px] font-bold text-indigo-600 flex items-center justify-center">
+                          L{layerIndex + 1}
+                        </span>
+                        <span className="text-[13px] font-semibold text-gray-700">
+                          Level {layerIndex + 1}
+                        </span>
+                        <span className="text-[11px] text-gray-400">
+                          ({layer.units.length} unit)
+                        </span>
+                      </div>
+                      {manualLayers.length > 1 && (
                         <button
                           type="button"
-                          onClick={() => removeManualUnit(index)}
+                          onClick={() => removeLayer(layerIndex)}
                           className="p-1.5 rounded-lg text-red-500 hover:bg-red-50 transition-colors"
+                          title="Hapus level"
                         >
                           <Trash2 size={14} />
                         </button>
                       )}
                     </div>
-                    <textarea
-                      value={unit.summary}
-                      onChange={(e) =>
-                        updateManualUnit(index, "summary", e.target.value)
-                      }
-                      placeholder="Ringkasan materi (opsional)"
-                      rows={2}
-                      className="w-full px-3 py-2 rounded-lg border border-gray-200 text-[12px] focus:border-indigo-400 outline-none resize-none"
-                    />
+
+                    {/* Units in this layer */}
+                    <div className="space-y-2">
+                      {layer.units.map((unit, unitIndex) => (
+                        <div
+                          key={unitIndex}
+                          className="bg-white rounded-lg p-2.5 border border-gray-200"
+                        >
+                          <div className="flex items-center gap-2 mb-1.5">
+                            <span className="w-5 h-5 bg-gray-100 rounded text-[10px] font-bold text-gray-500 flex items-center justify-center">
+                              {unitIndex + 1}
+                            </span>
+                            <input
+                              type="text"
+                              value={unit.title}
+                              onChange={(e) =>
+                                updateManualUnit(layerIndex, unitIndex, "title", e.target.value)
+                              }
+                              placeholder="Judul unit"
+                              className="flex-1 px-2.5 py-1.5 rounded-lg border border-gray-200 text-[13px] focus:border-indigo-400 outline-none"
+                            />
+                            {layer.units.length > 1 && (
+                              <button
+                                type="button"
+                                onClick={() => removeUnitFromLayer(layerIndex, unitIndex)}
+                                className="p-1 rounded text-red-400 hover:bg-red-50 transition-colors"
+                              >
+                                <X size={12} />
+                              </button>
+                            )}
+                          </div>
+                          <textarea
+                            value={unit.summary}
+                            onChange={(e) =>
+                              updateManualUnit(layerIndex, unitIndex, "summary", e.target.value)
+                            }
+                            placeholder="Ringkasan materi (opsional)"
+                            rows={1}
+                            className="w-full px-2.5 py-1.5 rounded-lg border border-gray-200 text-[12px] focus:border-indigo-400 outline-none resize-none"
+                          />
+                        </div>
+                      ))}
+                    </div>
+
+                    {/* Add unit to this layer */}
+                    <button
+                      type="button"
+                      onClick={() => addUnitToLayer(layerIndex)}
+                      className="mt-2 w-full py-1.5 rounded-lg border border-dashed border-gray-300 text-[12px] text-gray-500 hover:border-indigo-300 hover:text-indigo-600 transition-colors flex items-center justify-center gap-1"
+                    >
+                      <Plus size={12} /> Tambah Unit di Level Ini
+                    </button>
                   </div>
                 ))}
               </div>
+
+              {/* Add new layer */}
               <button
                 type="button"
-                onClick={addManualUnit}
-                className="mt-3 w-full py-2 rounded-xl border-2 border-dashed border-gray-200 text-[13px] text-gray-500 hover:border-indigo-300 hover:text-indigo-600 transition-colors flex items-center justify-center gap-2"
+                onClick={addManualLayer}
+                className="mt-3 w-full py-2.5 rounded-xl border-2 border-dashed border-gray-200 text-[13px] text-gray-500 hover:border-indigo-300 hover:text-indigo-600 transition-colors flex items-center justify-center gap-2"
               >
-                <Plus size={14} /> Tambah Unit
+                <Plus size={14} /> Tambah Level Berikutnya
               </button>
             </div>
           )}

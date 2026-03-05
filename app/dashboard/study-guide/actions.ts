@@ -506,7 +506,7 @@ export async function createRoadmapManual(
   description: string,
   subjectType: "course" | "topic",
   emoji: string,
-  units: { title: string; summary: string }[]
+  units: { title: string; summary: string; positionY: number; positionX: number }[]
 ) {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
@@ -530,15 +530,15 @@ export async function createRoadmapManual(
     return { error: roadmapError?.message || "Failed to create roadmap" };
   }
 
-  // Create units in a simple linear chain
+  // Create units with correct positions
   const unitsToInsert = units.map((u, idx) => ({
     roadmap_id: roadmap.id,
     title: u.title,
     summary: u.summary,
-    position_x: 0,
-    position_y: idx,
+    position_x: u.positionX,
+    position_y: u.positionY,
     order_index: idx,
-    status: idx === 0 ? "available" : "locked",
+    status: u.positionY === 0 ? "available" : "locked",
   }));
 
   const { data: createdUnits, error: unitsError } = await supabase
@@ -551,11 +551,34 @@ export async function createRoadmapManual(
     return { error: unitsError?.message || "Failed to create units" };
   }
 
-  // Create linear dependencies (each unit requires the previous)
-  const dependenciesToInsert = createdUnits.slice(1).map((unit, idx) => ({
-    unit_id: unit.id,
-    required_unit_id: createdUnits[idx].id,
-  }));
+  // Create dependencies: each unit at level N depends on ALL units at level N-1
+  const dependenciesToInsert: { unit_id: string; required_unit_id: string }[] = [];
+  
+  // Group units by level
+  const unitsByLevel: Record<number, typeof createdUnits> = {};
+  createdUnits.forEach((unit) => {
+    const level = unit.position_y;
+    if (!unitsByLevel[level]) unitsByLevel[level] = [];
+    unitsByLevel[level].push(unit);
+  });
+
+  // For each level > 0, create dependencies to all units in previous level
+  const levels = Object.keys(unitsByLevel).map(Number).sort((a, b) => a - b);
+  for (let i = 1; i < levels.length; i++) {
+    const currentLevel = levels[i];
+    const prevLevel = levels[i - 1];
+    const currentUnits = unitsByLevel[currentLevel];
+    const prevUnits = unitsByLevel[prevLevel];
+
+    currentUnits.forEach((currentUnit) => {
+      prevUnits.forEach((prevUnit) => {
+        dependenciesToInsert.push({
+          unit_id: currentUnit.id,
+          required_unit_id: prevUnit.id,
+        });
+      });
+    });
+  }
 
   if (dependenciesToInsert.length > 0) {
     await supabase.from("unit_dependencies").insert(dependenciesToInsert);
