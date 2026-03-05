@@ -3,7 +3,7 @@
 import { useState, useEffect, useRef } from "react";
 import { useParams, useSearchParams, useRouter } from "next/navigation";
 import { createClient } from "@/utils/supabase/client";
-import { sendGroupMessage } from "../actions";
+import { sendGroupMessage, getNoteContent } from "../actions";
 import {
     ArrowLeft,
     Users,
@@ -11,6 +11,7 @@ import {
     MoreVertical,
     FileText,
     FolderOpen,
+    Eye,
     Plus,
     Video,
     Mic,
@@ -40,7 +41,6 @@ interface Message {
     attachment_id?: string | null;
 }
 
-
 export default function StudyGroupRoom() {
     const router = useRouter();
     const params = useParams();
@@ -62,6 +62,8 @@ export default function StudyGroupRoom() {
     // Modals
     const [isAttachNoteModalOpen, setIsAttachNoteModalOpen] = useState(false);
     const [isAttachBoardModalOpen, setIsAttachBoardModalOpen] = useState(false);
+    const [viewingNote, setViewingNote] = useState<{ title: string; content: string; author: string } | null>(null);
+    const [isLoadingNote, setIsLoadingNote] = useState(false);
 
     // Supabase
     const supabase = createClient();
@@ -72,12 +74,17 @@ export default function StudyGroupRoom() {
     }, [messages]);
 
     useEffect(() => {
-        const fetchData = async () => {
-            setIsLoading(true);
-            const { data: { user } } = await supabase.auth.getUser();
+        let channel: any = null;
+        let currentUserId: string | null = null;
 
-            if (user) {
-                // Fetch participants
+        const fetchData = async () => {
+            try {
+                setIsLoading(true);
+                const { data: { user } } = await supabase.auth.getUser();
+                if (!user) return;
+                currentUserId = user.id;
+
+                // 1. Fetch participants
                 const { data: memberData } = await supabase
                     .from("study_group_members")
                     .select(`
@@ -91,12 +98,12 @@ export default function StudyGroupRoom() {
                         id: m.user_id,
                         name: m.profiles?.full_name || "Unknown",
                         avatar: (m.profiles?.full_name || "?").charAt(0),
-                        isOnline: true // Demo: assume online if in group
+                        isOnline: true
                     }));
                     setParticipants(formattedMembers);
                 }
 
-                // Fetch User's Notes for Attachment Panel
+                // 2. Fetch User's Notes for Attachment Panel
                 const { data: notesData } = await supabase
                     .from("notes")
                     .select("id, title, created_at")
@@ -104,18 +111,20 @@ export default function StudyGroupRoom() {
                     .limit(10);
                 if (notesData) setNotes(notesData);
 
-                // Fetch User's Boards for Attachment Panel
+                // 3. Fetch User's Boards for Attachment Panel
                 const { data: boardData } = await supabase
                     .from("board_members")
                     .select(`boards ( id, title, description, created_at )`)
                     .eq("user_id", user.id);
 
                 if (boardData) {
-                    const mappedBoards = boardData.map((item: any) => item.boards);
+                    const mappedBoards = boardData
+                        .filter((item: any) => item.boards)
+                        .map((item: any) => item.boards);
                     setBoards(mappedBoards);
                 }
 
-                // Fetch existing messages
+                // 4. Fetch existing messages
                 const { data: messagesData } = await supabase
                     .from("study_group_messages")
                     .select("id, content, attachment_type, attachment_id, created_at, user_id, profiles(full_name)")
@@ -135,8 +144,8 @@ export default function StudyGroupRoom() {
                     setMessages(formatted);
                 }
 
-                // Real-time Messages Subscription
-                const channel = supabase
+                // 5. Real-time Messages Subscription
+                channel = supabase
                     .channel(`group-${groupId}`)
                     .on(
                         'postgres_changes',
@@ -147,7 +156,6 @@ export default function StudyGroupRoom() {
                             filter: `group_id=eq.${groupId}`
                         },
                         async (payload) => {
-                            // Fetch profile for the new message sender
                             const { data: profileData } = await supabase
                                 .from("profiles")
                                 .select("full_name")
@@ -159,13 +167,12 @@ export default function StudyGroupRoom() {
                                 sender: profileData?.full_name || "Unknown",
                                 text: payload.new.content,
                                 time: new Date(payload.new.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-                                isMe: payload.new.user_id === user.id,
+                                isMe: payload.new.user_id === currentUserId,
                                 attachment_type: payload.new.attachment_type,
                                 attachment_id: payload.new.attachment_id
                             };
 
                             setMessages(prev => {
-                                // Simple dedup
                                 if (prev.some(m => m.id === newMsg.id)) return prev;
                                 return [...prev, newMsg];
                             });
@@ -173,13 +180,18 @@ export default function StudyGroupRoom() {
                     )
                     .subscribe();
 
-                return () => {
-                    supabase.removeChannel(channel);
-                };
+            } catch (err) {
+                console.error("Error fetching study group data:", err);
+            } finally {
+                setIsLoading(false);
             }
-            setIsLoading(false);
         };
+
         fetchData();
+
+        return () => {
+            if (channel) supabase.removeChannel(channel);
+        };
     }, [groupId]);
 
     const handleSendMessage = async (e: React.FormEvent) => {
@@ -324,10 +336,24 @@ export default function StudyGroupRoom() {
                                         </div>
                                         <div className={`p-4 rounded-2xl text-[14px] leading-relaxed shadow-sm ${msg.isMe ? 'bg-indigo-600 text-white rounded-tr-sm' : 'bg-white border border-gray-100 text-gray-800 rounded-tl-sm'}`}>
                                             {msg.text}
-                                            {msg.attachment_type === "note" && (
-                                                <Link href="/dashboard/ai-workspace" className="mt-2 flex items-center gap-2 bg-indigo-500 hover:bg-indigo-700 font-medium px-3 py-2 rounded-lg text-[12px] text-white transition-colors cursor-pointer w-fit">
-                                                    <FileText size={14} /> Buka Notes Masing-Masing
-                                                </Link>
+                                            {msg.attachment_type === "note" && msg.attachment_id && (
+                                                <button
+                                                    onClick={async () => {
+                                                        setIsLoadingNote(true);
+                                                        const res = await getNoteContent(msg.attachment_id!);
+                                                        if (res.data) {
+                                                            setViewingNote({
+                                                                title: res.data.title,
+                                                                content: res.data.content_markdown || "Catatan ini kosong.",
+                                                                author: (res.data.profiles as any)?.full_name || "Unknown"
+                                                            });
+                                                        }
+                                                        setIsLoadingNote(false);
+                                                    }}
+                                                    className={`mt-2 flex items-center gap-2 ${msg.isMe ? 'bg-white/20 hover:bg-white/30 text-white' : 'bg-indigo-50 hover:bg-indigo-100 text-indigo-600'} font-medium px-3 py-2 rounded-lg text-[12px] transition-colors cursor-pointer w-fit`}
+                                                >
+                                                    <Eye size={14} /> Lihat Isi Catatan
+                                                </button>
                                             )}
                                             {msg.attachment_type === "board" && (
                                                 <Link href={`/dashboard/boards/${msg.attachment_id}`} className="mt-2 flex items-center gap-2 bg-indigo-500 hover:bg-indigo-700 font-medium px-3 py-2 rounded-lg text-[12px] text-white transition-colors cursor-pointer w-fit">
@@ -502,6 +528,47 @@ export default function StudyGroupRoom() {
                                 ))
                             )}
                         </div>
+                    </div>
+                </div>
+            )}
+            {/* View Note Content Modal */}
+            {viewingNote && (
+                <div className="fixed inset-0 bg-gray-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+                    <div className="bg-white rounded-[24px] shadow-2xl w-full max-w-[650px] max-h-[80vh] overflow-hidden flex flex-col">
+                        <div className="p-5 border-b border-gray-100 flex justify-between items-center bg-gradient-to-r from-blue-50 to-indigo-50 shrink-0">
+                            <div>
+                                <h2 className="text-[18px] font-bold text-gray-900 flex items-center gap-2">
+                                    <FileText size={20} className="text-blue-500" />
+                                    {viewingNote.title}
+                                </h2>
+                                <p className="text-[12px] text-gray-500 mt-0.5">Dibagikan oleh <span className="font-semibold text-indigo-600">{viewingNote.author}</span></p>
+                            </div>
+                            <button onClick={() => setViewingNote(null)} className="p-2 text-gray-400 hover:text-gray-900 rounded-full hover:bg-white/80 transition-colors">
+                                <X size={20} />
+                            </button>
+                        </div>
+                        <div className="flex-1 overflow-y-auto p-6">
+                            <div className="prose prose-sm max-w-none prose-headings:text-gray-900 prose-p:text-gray-700 prose-a:text-indigo-600">
+                                <div className="whitespace-pre-wrap text-[14px] leading-relaxed text-gray-700">
+                                    {viewingNote.content}
+                                </div>
+                            </div>
+                        </div>
+                        <div className="p-4 border-t border-gray-100 bg-gray-50 shrink-0 flex justify-end">
+                            <button onClick={() => setViewingNote(null)} className="px-5 py-2.5 rounded-xl bg-indigo-600 text-white text-[13px] font-bold hover:bg-indigo-700 transition-colors cursor-pointer">
+                                Tutup
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* Loading Note Overlay */}
+            {isLoadingNote && (
+                <div className="fixed inset-0 bg-gray-900/30 backdrop-blur-[2px] z-50 flex items-center justify-center">
+                    <div className="bg-white rounded-2xl p-6 shadow-xl flex items-center gap-3">
+                        <div className="w-5 h-5 border-2 border-indigo-500 border-t-transparent rounded-full animate-spin"></div>
+                        <span className="text-[14px] font-medium text-gray-700">Memuat isi catatan...</span>
                     </div>
                 </div>
             )}

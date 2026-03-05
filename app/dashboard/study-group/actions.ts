@@ -130,3 +130,19 @@ export async function deleteStudyGroup(groupId: string) {
     if (error) return { error: error.message };
     return { success: true };
 }
+
+export async function getNoteContent(noteId: string) {
+    const supabase = await createClient();
+    const { data: { user } } = await supabase.auth.getUser();
+
+    if (!user) return { error: "User not authenticated" };
+
+    const { data, error } = await supabase
+        .from("notes")
+        .select("id, title, content_markdown, created_at, profiles:user_id(full_name)")
+        .eq("id", noteId)
+        .single();
+
+    if (error) return { error: error.message };
+    return { data };
+}

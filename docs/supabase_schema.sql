@@ -280,3 +280,10 @@ CREATE POLICY "Users can leave or update members" ON study_group_members FOR ALL
 -- Policies for study_group_messages
 CREATE POLICY "Users can send messages" ON study_group_messages FOR INSERT WITH CHECK (auth.uid() = user_id);
 CREATE POLICY "Users can view messages" ON study_group_messages FOR SELECT USING (true);
+
+-- Allow viewing notes shared in study groups (read-only for all authenticated users)
+-- The existing policy "Users can manage their own notes" covers INSERT/UPDATE/DELETE for owners.
+-- This new policy allows any authenticated user to SELECT (view) notes.
+CREATE POLICY "Authenticated users can view shared notes"
+  ON notes FOR SELECT
+  USING (auth.role() = 'authenticated');
