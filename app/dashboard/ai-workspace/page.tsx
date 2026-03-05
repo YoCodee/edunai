@@ -1,7 +1,12 @@
 import { createClient } from "@/utils/supabase/server";
 import AIWorkspaceClient from "./AIWorkspaceClient";
 
-export default async function AIWorkspacePage() {
+export default async function AIWorkspacePage({
+  searchParams,
+}: {
+  searchParams: Promise<{ note?: string }>;
+}) {
+  const { note: selectedNoteId } = await searchParams;
   const supabase = await createClient();
 
   const {
@@ -35,6 +40,7 @@ export default async function AIWorkspacePage() {
       initialNotes={notes || []}
       initialFolders={folders || []}
       initialStudySets={studySets || []}
+      selectedNoteId={selectedNoteId}
     />
   );
 }

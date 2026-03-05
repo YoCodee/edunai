@@ -90,3 +90,33 @@ export async function saveGeneratedNote(
 
   return { success: true, data };
 }
+
+export async function deleteNoteWithResources(noteId: string) {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) {
+    return { success: false, error: "Not logged in" };
+  }
+
+  // First, delete any unit_resources that reference this note
+  await supabase
+    .from("unit_resources")
+    .delete()
+    .eq("linked_note_id", noteId);
+
+  // Then delete the note itself
+  const { error } = await supabase
+    .from("notes")
+    .delete()
+    .eq("id", noteId)
+    .eq("user_id", user.id);
+
+  if (error) {
+    return { success: false, error: error.message };
+  }
+
+  return { success: true };
+}

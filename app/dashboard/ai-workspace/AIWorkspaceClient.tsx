@@ -46,7 +46,7 @@ import {
   GripVertical,
 } from "lucide-react";
 
-import { processImageWithAI, saveGeneratedNote } from "./actions";
+import { processImageWithAI, saveGeneratedNote, deleteNoteWithResources } from "./actions";
 import { generateStudyMaterial } from "./assistant-actions";
 
 // ─────────────────────────────────────────────
@@ -71,6 +71,7 @@ interface AIWorkspaceClientProps {
   initialNotes: Note[];
   initialFolders: NoteFolder[];
   initialStudySets: any[];
+  selectedNoteId?: string;
 }
 
 // ─────────────────────────────────────────────
@@ -80,6 +81,7 @@ export default function AIWorkspaceClient({
   initialNotes,
   initialFolders,
   initialStudySets,
+  selectedNoteId,
 }: AIWorkspaceClientProps) {
   const supabase = createClient();
 
@@ -107,9 +109,13 @@ export default function AIWorkspaceClient({
 
   // ── Main Layout ──
   const [mainMode, setMainMode] = useState<"view" | "scan">("view");
-  const [activeNote, setActiveNote] = useState<Note | null>(
-    initialNotes[0] || null,
-  );
+  const [activeNote, setActiveNote] = useState<Note | null>(() => {
+    if (selectedNoteId) {
+      const note = initialNotes.find((n) => n.id === selectedNoteId);
+      if (note) return note;
+    }
+    return initialNotes[0] || null;
+  });
 
   // ── Scanner State ──
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
@@ -148,6 +154,22 @@ export default function AIWorkspaceClient({
     if (isCreatingFolder && newFolderInputRef.current)
       newFolderInputRef.current.focus();
   }, [isCreatingFolder]);
+
+  // ── Auto-select note from URL param ──
+  useEffect(() => {
+    if (selectedNoteId) {
+      const note = notes.find((n) => n.id === selectedNoteId);
+      if (note) {
+        setActiveNote(note);
+        setMainMode("view");
+        setActiveTool("idle");
+        // If note is in a folder, expand that folder
+        if (note.folder_id) {
+          setExpandedFolders((prev) => new Set([...prev, note.folder_id!]));
+        }
+      }
+    }
+  }, [selectedNoteId]);
 
   // ─────────────────────────────────────────────
   // Derived: filtered notes based on active folder
@@ -194,8 +216,8 @@ export default function AIWorkspaceClient({
   const handleDeleteNote = async (id: string, e: React.MouseEvent) => {
     e.stopPropagation();
     if (!confirm("Delete this note?")) return;
-    const { error } = await supabase.from("notes").delete().eq("id", id);
-    if (!error) {
+    const result = await deleteNoteWithResources(id);
+    if (result.success) {
       const newNotes = notes.filter((n) => n.id !== id);
       setNotes(newNotes);
       if (activeNote?.id === id) setActiveNote(newNotes[0] || null);
