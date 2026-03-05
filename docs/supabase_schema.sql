@@ -19,7 +19,7 @@ CREATE TABLE profiles (
 
 -- Turn on RLS for profiles
 ALTER TABLE profiles ENABLE ROW LEVEL SECURITY;
-CREATE POLICY "Users can view their own profile." ON profiles FOR SELECT USING (auth.uid() = id);
+CREATE POLICY "Users can view all profile names." ON profiles FOR SELECT USING (true);
 CREATE POLICY "Users can update their own profile." ON profiles FOR UPDATE USING (auth.uid() = id);
 
 
@@ -216,3 +216,67 @@ ALTER TABLE activity_log ENABLE ROW LEVEL SECURITY;
 CREATE POLICY "Users manage own activity log" ON activity_log
   FOR ALL USING (auth.uid() = user_id);
 
+-- ==========================================
+-- 8. FEATURE 6: STUDY GROUPS & CHAT
+-- ==========================================
+CREATE TABLE study_groups (
+  id UUID DEFAULT uuid_generate_v4() PRIMARY KEY,
+  owner_id UUID REFERENCES public.profiles(id) ON DELETE CASCADE NOT NULL,
+  title TEXT NOT NULL,
+  description TEXT,
+  group_type TEXT DEFAULT 'private', -- 'public' or 'private'
+  join_code TEXT UNIQUE,
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT TIMEZONE('utc'::text, NOW()) NOT NULL
+);
+
+CREATE TABLE study_group_members (
+  group_id UUID REFERENCES public.study_groups(id) ON DELETE CASCADE NOT NULL,
+  user_id UUID REFERENCES public.profiles(id) ON DELETE CASCADE NOT NULL,
+  role TEXT DEFAULT 'member', -- 'admin', 'member'
+  joined_at TIMESTAMP WITH TIME ZONE DEFAULT TIMEZONE('utc'::text, NOW()) NOT NULL,
+  PRIMARY KEY (group_id, user_id)
+);
+
+CREATE TABLE study_group_messages (
+  id UUID DEFAULT uuid_generate_v4() PRIMARY KEY,
+  group_id UUID REFERENCES public.study_groups(id) ON DELETE CASCADE NOT NULL,
+  user_id UUID REFERENCES public.profiles(id) ON DELETE CASCADE NOT NULL,
+  content TEXT,
+  attachment_type TEXT, -- 'note', 'board', null
+  attachment_id UUID,   -- ID of the note or board
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT TIMEZONE('utc'::text, NOW()) NOT NULL
+);
+
+ALTER TABLE study_groups ENABLE ROW LEVEL SECURITY;
+ALTER TABLE study_group_members ENABLE ROW LEVEL SECURITY;
+ALTER TABLE study_group_messages ENABLE ROW LEVEL SECURITY;
+
+-- Policies for study_groups
+CREATE POLICY "Users can create study groups" ON study_groups FOR INSERT WITH CHECK (auth.uid() = owner_id);
+CREATE POLICY "Users can view all study groups" ON study_groups FOR SELECT USING (true);
+CREATE POLICY "Owner can update study groups" ON study_groups FOR UPDATE USING (auth.uid() = owner_id);
+CREATE POLICY "Owner can delete study groups" ON study_groups FOR DELETE USING (auth.uid() = owner_id);
+
+-- Policies for study_group_members
+CREATE POLICY "Users can join study groups" ON study_group_members FOR INSERT WITH CHECK (auth.uid() = user_id);
+CREATE POLICY "Users can view members" ON study_group_members FOR SELECT USING (true);
+CREATE POLICY "Users can leave or update members" ON study_group_members FOR ALL USING (auth.uid() = user_id);
+
+-- Policies for study_group_messages
+CREATE POLICY "Users can send messages" ON study_group_messages FOR INSERT WITH CHECK (auth.uid() = user_id);
+CREATE POLICY "Users can view messages" ON study_group_messages FOR SELECT USING (true);
+
+-- ==========================================
+-- MIGRATIONS / UPDATES
+-- ==========================================
+-- Menambahkan kolom subject untuk Live Sessions
+ALTER TABLE study_groups ADD COLUMN IF NOT EXISTS subject TEXT;
+
+-- Policies for study_group_members
+CREATE POLICY "Users can join study groups" ON study_group_members FOR INSERT WITH CHECK (auth.uid() = user_id);
+CREATE POLICY "Users can view members" ON study_group_members FOR SELECT USING (true);
+CREATE POLICY "Users can leave or update members" ON study_group_members FOR ALL USING (auth.uid() = user_id);
+
+-- Policies for study_group_messages
+CREATE POLICY "Users can send messages" ON study_group_messages FOR INSERT WITH CHECK (auth.uid() = user_id);
+CREATE POLICY "Users can view messages" ON study_group_messages FOR SELECT USING (true);
