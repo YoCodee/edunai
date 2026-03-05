@@ -6,6 +6,7 @@ import Solutions from "@/components/sections/Solutions";
 import OfferSection from "@/components/sections/OfferSection";
 import HowItWorks from "@/components/sections/HowItWorks";
 import Testimonials from "@/components/sections/Testimonials";
+import DraggableStudyNotes from "@/components/sections/DraggableStudyNotes";
 import Footer from "@/components/sections/Footer";
 import BackgroundOrbs from "@/components/ui/BackgroundOrbs";
 
@@ -26,6 +27,7 @@ export default async function Home() {
         <Solutions />
         <OfferSection />
         <HowItWorks />
+        <DraggableStudyNotes />
         <Testimonials />
       </main>
       <Footer />

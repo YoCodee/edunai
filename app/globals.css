@@ -164,3 +164,435 @@ h2,
   border-color: #fca03e;
   background: #fffbf5;
 }
+/* ── ENTRANCE ANIMATIONS ── */
+@keyframes fade-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes slide-up {
+  from {
+    transform: translateY(16px);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+@keyframes slide-in-right {
+  from {
+    transform: translateX(24px);
+    opacity: 0;
+  }
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+
+.animate-in {
+  animation: fade-in 0.3s ease-out;
+}
+
+.animate-in-up {
+  animation: slide-up 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.animate-in-right {
+  animation: slide-in-right 0.3s ease-out;
+}
+
+/* ── ENHANCED SKELETON SHIMMER ── */
+@keyframes shimmer {
+  0% {
+    background-position: -1000px 0;
+  }
+  100% {
+    background-position: 1000px 0;
+  }
+}
+
+.animate-pulse {
+  animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+@keyframes pulse {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.5;
+  }
+}
+
+/* ── HOVER STATE ANIMATIONS ── */
+.transition-smooth {
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.hover-lift:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
+}
+
+.hover-scale:hover {
+  transform: scale(1.02);
+}
+
+.hover-opacity:hover {
+  opacity: 0.8;
+}
+
+/* ── BUTTON PRESS ANIMATION ── */
+@keyframes button-press {
+  0% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(0.96);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+
+.button-press:active {
+  animation: button-press 0.15s ease-out;
+}
+
+/* ── SPIN ANIMATION FOR LOADING ── */
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.animate-spin {
+  animation: spin 1s linear infinite;
+}
+
+/* ── FOCUS RING ANIMATION ── */
+@keyframes focus-ring {
+  0% {
+    box-shadow:
+      0 0 0 2px white,
+      0 0 0 4px rgba(45, 115, 255, 0.5);
+  }
+  100% {
+    box-shadow:
+      0 0 0 2px white,
+      0 0 0 8px rgba(45, 115, 255, 0.2);
+  }
+}
+
+/* ── SMOOTH TRANSITIONS FOR STATE CHANGES ── */
+input:focus,
+button:focus,
+textarea:focus,
+select:focus {
+  outline: none;
+  box-shadow:
+    0 0 0 3px rgba(45, 115, 255, 0.1),
+    0 0 0 1px rgba(45, 115, 255, 0.5);
+  transition: box-shadow 0.2s ease-out;
+}
+
+/* ── DISABLED STATE ── */
+button:disabled,
+input:disabled,
+textarea:disabled,
+select:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+/* ── STAGGER ANIMATIONS FOR LISTS ── */
+@keyframes stagger-in {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.stagger-item {
+  animation: stagger-in 0.4s ease-out forwards;
+}
+
+.stagger-item:nth-child(1) {
+  animation-delay: 0s;
+}
+.stagger-item:nth-child(2) {
+  animation-delay: 0.05s;
+}
+.stagger-item:nth-child(3) {
+  animation-delay: 0.1s;
+}
+.stagger-item:nth-child(4) {
+  animation-delay: 0.15s;
+}
+.stagger-item:nth-child(5) {
+  animation-delay: 0.2s;
+}
+.stagger-item:nth-child(n + 6) {
+  animation-delay: 0.25s;
+}
+
+/* ── SMOOTH PAGE TRANSITIONS ── */
+@keyframes page-fade-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+.page-fade-in {
+  animation: page-fade-in 0.3s ease-out;
+}
+
+/* ── GRADIENT ANIMATIONS ── */
+@keyframes gradient-shift {
+  0%,
+  100% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+}
+
+.gradient-animate {
+  background-size: 200% 200%;
+  animation: gradient-shift 6s ease infinite;
+}
+
+/* ── SCALE POP ANIMATION ── */
+@keyframes scale-pop {
+  0% {
+    transform: scale(0.95);
+    opacity: 0;
+  }
+  50% {
+    transform: scale(1.02);
+  }
+  100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+.scale-pop {
+  animation: scale-pop 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+/* ── FLIP CARD ANIMATION ── */
+@keyframes flip {
+  0% {
+    transform: rotateY(0deg);
+  }
+  100% {
+    transform: rotateY(180deg);
+  }
+}
+
+.flip {
+  animation: flip 0.6s ease-in-out;
+  transform-style: preserve-3d;
+}
+
+/* ── FLOAT ANIMATION ── */
+@keyframes float {
+  0%,
+  100% {
+    transform: translateY(0px);
+  }
+  50% {
+    transform: translateY(-8px);
+  }
+}
+
+.float {
+  animation: float 3s ease-in-out infinite;
+}
+
+/* ── BORDER ANIMATION ── */
+@keyframes border-pulse {
+  0%,
+  100% {
+    border-color: rgba(45, 115, 255, 0.2);
+  }
+  50% {
+    border-color: rgba(45, 115, 255, 0.5);
+  }
+}
+
+.border-pulse {
+  animation: border-pulse 2s ease-in-out infinite;
+}
+
+/* ── ENHANCED CARD STYLES FOR DARK/LIGHT MODES ── */
+.card-elevated {
+  background: var(--card);
+  box-shadow:
+    0 1px 3px rgba(0, 0, 0, 0.05),
+    0 4px 12px rgba(0, 0, 0, 0.08);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.card-elevated:hover {
+  box-shadow:
+    0 1px 3px rgba(0, 0, 0, 0.08),
+    0 8px 24px rgba(0, 0, 0, 0.12);
+  transform: translateY(-2px);
+}
+
+/* ── SMOOTH BACKDROP BLUR ── */
+.backdrop-blur-sm {
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+}
+
+.backdrop-blur-md {
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+}
+
+/* ── ENHANCED INPUT STYLES ── */
+.input-focus-ring {
+  transition: all 0.2s ease-out;
+}
+
+.input-focus-ring:focus {
+  box-shadow:
+    0 0 0 3px rgba(45, 115, 255, 0.1),
+    0 0 0 1.5px var(--primary);
+  border-color: var(--primary);
+}
+
+/* ── RESPONSIVE TEXT SCALING ── */
+@media (max-width: 768px) {
+  h1 {
+    font-size: 1.875rem;
+  }
+
+  h2 {
+    font-size: 1.5rem;
+  }
+}
+
+/* ── ACCESSIBILITY IMPROVEMENTS ── */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+/* ── ENHANCED MOBILE RESPONSIVE ── */
+@media (max-width: 640px) {
+  /* Better touch targets for mobile */
+  button,
+  a,
+  [role="button"],
+  input,
+  textarea,
+  select {
+    min-height: 44px;
+  }
+
+  /* Stack layouts on mobile */
+  .md\:grid-cols-2,
+  .md\:flex-row,
+  .lg\:flex-row {
+    flex-direction: column;
+    grid-template-columns: 1fr;
+  }
+
+  /* Reduce padding on mobile */
+  .p-8 {
+    padding: 1rem;
+  }
+
+  .px-8 {
+    padding-left: 1rem;
+    padding-right: 1rem;
+  }
+
+  /* Better spacing for small screens */
+  .gap-8 {
+    gap: 1rem;
+  }
+}
+
+/* ── LARGE SCREEN OPTIMIZATIONS ── */
+@media (min-width: 1400px) {
+  .container {
+    max-width: 1320px;
+  }
+
+  /* Better spacing on large screens */
+  .gap-8 {
+    gap: 2.5rem;
+  }
+
+  .p-8 {
+    padding: 2.5rem;
+  }
+}
+
+/* ── PRINT STYLES ── */
+@media print {
+  * {
+    background: transparent !important;
+    color: black !important;
+    box-shadow: none !important;
+  }
+
+  a,
+  a:visited {
+    text-decoration: underline;
+  }
+
+  button,
+  input,
+  textarea,
+  select {
+    page-break-inside: avoid;
+  }
+}
+
+/* ── SMOOTH SCROLLING ── */
+html {
+  scroll-behavior: smooth;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+}
+
+/* ── IMPROVED SELECTION STYLES ── */
+::selection {
+  background-color: var(--primary);
+  color: white;
+}
+
+::-moz-selection {
+  background-color: var(--primary);
+  color: white;
+}
