@@ -259,7 +259,7 @@ export default function StudyGroupRoom() {
     };
 
     return (
-        <div className="flex-1 flex flex-col h-full bg-[#fbfcff] overflow-hidden">
+        <div className="flex-1 flex flex-col h-screen bg-[#fbfcff] overflow-hidden">
 
             {/* --- HEADER --- */}
             <header className="bg-white border-b border-gray-100 px-6 py-4 flex items-center justify-between shrink-0 shadow-[0_2px_10px_rgba(0,0,0,0.02)] z-10">
@@ -299,10 +299,10 @@ export default function StudyGroupRoom() {
             </header>
 
             {/* --- MAIN LAYOUT --- */}
-            <div className="flex-1 flex overflow-hidden relative">
+            <div className="flex-1 flex overflow-hidden relative min-h-0">
 
                 {/* CHAT AREA */}
-                <div className="flex-1 flex flex-col bg-[#fbfcff] z-0">
+                <div className="flex-1 flex flex-col bg-[#fbfcff] z-0 min-h-0">
 
                     {/* Chat Messages */}
                     <div className="flex-1 overflow-y-auto p-6 space-y-6">
@@ -369,7 +369,7 @@ export default function StudyGroupRoom() {
                     </div>
 
                     {/* Chat Input */}
-                    <div className="p-4 bg-white border-t border-gray-100 shadow-[0_-4px_20px_rgba(0,0,0,0.02)]">
+                    <div className="p-4 bg-white border-t border-gray-100 shadow-[0_-4px_20px_rgba(0,0,0,0.02)] shrink-0">
                         <form onSubmit={handleSendMessage} className="flex gap-2 w-full max-w-5xl mx-auto">
                             <div className="relative flex-1">
                                 <input
