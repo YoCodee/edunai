@@ -27,7 +27,7 @@ interface StudyNote {
 const NOTES_CONFIG: StudyNote[] = [
   {
     id: 1,
-    title: "Quick Capture",
+    title: "Quick Capture 1",
     description:
       "Snap photos of your notes and let AI instantly organize them for you.",
     icon: <Zap className="w-5 h-5" />,
@@ -35,8 +35,8 @@ const NOTES_CONFIG: StudyNote[] = [
     borderColor: "border-orange-200",
     accentColor: "text-orange-600",
     orbColor: "bg-orange-500",
-    initialX: 40,
-    initialY: 20,
+    initialX: 300,
+    initialY: 70,
     initialRotation: -6,
     orbPosition: { top: "-16px", right: "-16px" },
   },
@@ -50,7 +50,7 @@ const NOTES_CONFIG: StudyNote[] = [
     borderColor: "border-blue-200",
     accentColor: "text-blue-600",
     orbColor: "bg-blue-500",
-    initialX: 520,
+    initialX: 820,
     initialY: 120,
     initialRotation: 4,
     orbPosition: { top: "-12px", right: "-12px" },
@@ -80,7 +80,7 @@ const NOTES_CONFIG: StudyNote[] = [
     borderColor: "border-amber-200",
     accentColor: "text-amber-600",
     orbColor: "bg-orange-500",
-    initialX: 520,
+    initialX: 720,
     initialY: 340,
     initialRotation: -5,
     orbPosition: { top: "-16px", right: "-14px" },

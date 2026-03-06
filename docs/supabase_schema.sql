@@ -239,7 +239,7 @@ CREATE TABLE study_group_members (
 
 CREATE TABLE study_group_messages (
   id UUID DEFAULT uuid_generate_v4() PRIMARY KEY,
-  group_id UUID REFERENCES public.study_groups(id) ON DELETE CASCADE NOT NULL,
+  group_id UUID REFERENCES public.study_groups    (id) ON DELETE CASCADE NOT NULL,
   user_id UUID REFERENCES public.profiles(id) ON DELETE CASCADE NOT NULL,
   content TEXT,
   attachment_type TEXT, -- 'note', 'board', null

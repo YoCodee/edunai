@@ -41,11 +41,24 @@ export default function NavbarClient({ initialUser }: { initialUser: any }) {
   }, []);
 
   const navLinks = [
-    { label: "Features", href: "#features" },
     { label: "Solutions", href: "#solutions" },
+    { label: "Features", href: "#features" },
     { label: "How it Works", href: "#how-it-works" },
-    { label: "Pricing", href: "#pricing" },
   ];
+
+  /** Smooth-scroll to section, closing mobile menu if open */
+  const handleNavClick = (
+    e: React.MouseEvent<HTMLAnchorElement>,
+    href: string,
+  ) => {
+    if (!href.startsWith("#")) return;
+    e.preventDefault();
+    const target = document.querySelector(href);
+    if (target) {
+      target.scrollIntoView({ behavior: "smooth", block: "start" });
+    }
+    setMobileOpen(false);
+  };
 
   const displayName =
     user?.full_name?.split(" ")[0] || user?.email?.split("@")[0] || "Student";
@@ -76,13 +89,14 @@ export default function NavbarClient({ initialUser }: { initialUser: any }) {
         {/* ─── CENTER: Nav Links (desktop) ─── */}
         <div className="hidden lg:flex items-center gap-1">
           {navLinks.map((link) => (
-            <Link
+            <a
               key={link.label}
               href={link.href}
-              className="px-4 py-2 rounded-xl text-[14px] font-medium text-foreground/60 hover:text-foreground hover:bg-black/4 transition-all"
+              onClick={(e) => handleNavClick(e, link.href)}
+              className="px-4 py-2 rounded-xl text-[14px] font-medium text-foreground/60 hover:text-foreground hover:bg-black/4 transition-all cursor-pointer"
             >
               {link.label}
-            </Link>
+            </a>
           ))}
         </div>
 
@@ -157,14 +171,14 @@ export default function NavbarClient({ initialUser }: { initialUser: any }) {
       >
         <div className="bg-[#fbfbfb]/95 backdrop-blur-xl border-t border-black/6 px-6 py-5 space-y-1">
           {navLinks.map((link) => (
-            <Link
+            <a
               key={link.label}
               href={link.href}
-              onClick={() => setMobileOpen(false)}
-              className="block px-4 py-3 rounded-xl text-[15px] font-medium text-foreground/70 hover:text-foreground hover:bg-black/4 transition-all"
+              onClick={(e) => handleNavClick(e, link.href)}
+              className="block px-4 py-3 rounded-xl text-[15px] font-medium text-foreground/70 hover:text-foreground hover:bg-black/4 transition-all cursor-pointer"
             >
               {link.label}
-            </Link>
+            </a>
           ))}
 
           <div className="pt-3 border-t border-black/6 flex flex-col gap-2">

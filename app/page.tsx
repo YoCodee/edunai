@@ -9,6 +9,8 @@ import Testimonials from "@/components/sections/Testimonials";
 import DraggableStudyNotes from "@/components/sections/DraggableStudyNotes";
 import Footer from "@/components/sections/Footer";
 import BackgroundOrbs from "@/components/ui/BackgroundOrbs";
+import IntroAnimation from "@/components/ui/IntroAnimation";
+import Features from "@/components/sections/Features";
 
 export default async function Home() {
   const supabase = await createClient();
@@ -18,19 +20,28 @@ export default async function Home() {
   const isLoggedIn = !!session?.user;
 
   return (
-    <div className="relative min-h-screen bg-background overflow-hidden selection:bg-primary/30">
-      <BackgroundOrbs />
-      <Navbar />
-      <main>
-        <Hero isLoggedIn={isLoggedIn} />
-        <BeforeAfter />
-        <Solutions />
-        <OfferSection />
-        <HowItWorks />
-        <DraggableStudyNotes />
-        <Testimonials />
-      </main>
-      <Footer />
-    </div>
+    <>
+      <IntroAnimation />
+      <div className="relative min-h-screen bg-background overflow-hidden selection:bg-primary/30">
+        <BackgroundOrbs />
+        <Navbar />
+        <main>
+          <Hero isLoggedIn={isLoggedIn} />
+          <BeforeAfter />
+          <div id="solutions">
+            <Solutions />
+          </div>
+          <div id="features">
+            <OfferSection />
+          </div>
+          <div id="how-it-works">
+            <HowItWorks />
+          </div>
+          <DraggableStudyNotes />
+          <Testimonials />
+        </main>
+        <Footer />
+      </div>
+    </>
   );
 }
