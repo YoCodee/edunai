@@ -46,7 +46,11 @@ import {
   GripVertical,
 } from "lucide-react";
 
-import { processImageWithAI, saveGeneratedNote, deleteNoteWithResources } from "./actions";
+import {
+  processImageWithAI,
+  saveGeneratedNote,
+  deleteNoteWithResources,
+} from "./actions";
 import { generateStudyMaterial } from "./assistant-actions";
 
 // ─────────────────────────────────────────────
@@ -169,7 +173,21 @@ export default function AIWorkspaceClient({
         }
       }
     }
-  }, [selectedNoteId]);
+  }, [selectedNoteId, notes]);
+
+  // ── Auto-load scan image from sessionStorage ──
+  useEffect(() => {
+    try {
+      const pendingImage = sessionStorage.getItem("scan_pending_image");
+      if (pendingImage) {
+        setSelectedImage(pendingImage);
+        setMainMode("scan");
+        sessionStorage.removeItem("scan_pending_image");
+      }
+    } catch (e) {
+      console.error("Failed to read pending scan image", e);
+    }
+  }, []);
 
   // ─────────────────────────────────────────────
   // Derived: filtered notes based on active folder

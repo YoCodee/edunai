@@ -25,14 +25,14 @@ export default function IntroAnimation() {
     // ── 2. box appears around "E"
     const t2 = setTimeout(() => setShowBox(true), 500);
 
-    // ── 3. "dunai" pushes in, box stretches to wrap full word
-    const t3 = setTimeout(() => setPhase("push"), 2300);
+    // ── 3. "dunai" slides in smoothly
+    const t3 = setTimeout(() => setPhase("push"), 2200);
 
     // ── 4. short hold with full "Edunai" + box
-    const t4 = setTimeout(() => setPhase("hold"), 3400);
+    const t4 = setTimeout(() => setPhase("hold"), 3500);
 
     // ── 5. curtain: whole white screen slides up
-    const t5 = setTimeout(() => setPhase("curtain"), 3950);
+    const t5 = setTimeout(() => setPhase("curtain"), 4050);
 
     // ── 6. unmount
     const t6 = setTimeout(() => setVisible(false), 5200);
@@ -130,19 +130,29 @@ export default function IntroAnimation() {
 
         {/* ── "dunai" slides in from right ────────────────────────────── */}
         {/*
-         * max-width goes 0 → unconstrained (500px cap).
-         * This clips the text while it pushes the "E" left,
-         * and simultaneously stretches the outer box.
+         * DUAL-LAYER approach:
+         *   1. max-width 0→500px   ← controls LAYOUT space so "E" stays truly
+         *                            centered while dunai is hidden (no ghost width)
+         *   2. clipPath + translateX ← controls VISUAL reveal (GPU composited,
+         *                            buttery smooth — no layout recalc per frame)
+         * All three properties use the same easing curve so they move in sync.
          */}
         <div
           style={{
             overflow: "hidden",
-            maxWidth: isPush ? 480 : 0,
-            transition: isPush
-              ? "max-width 0.58s cubic-bezier(0.16,1,0.3,1)"
-              : "none",
+            maxWidth: isPush ? 500 : 0,
             display: "inline-flex",
             alignItems: "baseline",
+            clipPath: isPush ? "inset(0 0% 0 0)" : "inset(0 100% 0 0)",
+            transform: isPush ? "translateX(0px)" : "translateX(32px)",
+            transition: isPush
+              ? [
+                  "max-width 0.72s cubic-bezier(0.22,1,0.36,1)",
+                  "clip-path 0.72s cubic-bezier(0.22,1,0.36,1)",
+                  "transform 0.72s cubic-bezier(0.22,1,0.36,1)",
+                ].join(", ")
+              : "none",
+            willChange: "clip-path, transform",
           }}
         >
           {/* "dun" — Times New Roman italic (matches "E") */}

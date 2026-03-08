@@ -17,9 +17,12 @@ import {
   CheckCircle,
   FileText,
   Plus,
+  Bell,
 } from "lucide-react";
 import { format, parseISO } from "date-fns";
 import ResumeCard from "./ResumeCard";
+import ScanPhotoModal from "@/components/ui/ScanPhotoModal";
+import QuickReminderModal from "@/components/ui/QuickReminderModal";
 
 interface Note {
   id: string;
@@ -85,6 +88,8 @@ export default function OverviewClient({
   lastVisitedAt,
 }: Props) {
   const containerRef = useRef<HTMLDivElement>(null);
+  const [showScanModal, setShowScanModal] = useState(false);
+  const [showReminderModal, setShowReminderModal] = useState(false);
 
   const hour = new Date().getHours();
   const greeting =
@@ -145,14 +150,6 @@ export default function OverviewClient({
 
     return () => ctx.revert();
   }, []);
-
-  const quickLinks = [
-    { label: "New Note", icon: BookOpen, href: "/dashboard/notes" },
-    { label: "Scan Board", icon: Camera, href: "/dashboard/scanner" },
-    { label: "Schedule", icon: Calendar, href: "/dashboard/schedule" },
-    { label: "AI Chat", icon: BrainCircuit, href: "/dashboard/assistant" },
-    { label: "Boards", icon: LayoutDashboard, href: "/dashboard/boards" },
-  ];
 
   const stats = [
     {
@@ -244,27 +241,45 @@ export default function OverviewClient({
               </p>
             </div>
 
-            {/* Quick Links */}
-            <div className="flex flex-wrap gap-2 mt-1">
-              {quickLinks.map((q) => {
-                const Icon = q.icon;
-                return (
-                  <Link
-                    key={q.label}
-                    href={q.href}
-                    className="ov-ql ql-hover inline-flex items-center gap-2 px-4 py-2 rounded-full text-[13px] font-semibold text-gray-600 bg-white border border-gray-200 shadow-sm"
-                  >
-                    <Icon size={13} className="text-gray-400" />
-                    {q.label}
-                  </Link>
-                );
-              })}
+            {/* Shortcuts */}
+            <div className="flex flex-wrap items-center gap-3 mt-2 sm:mt-0">
+              {/* Add Reminder Shortcut */}
+              <button
+                onClick={() => setShowReminderModal(true)}
+                className="ov-ql inline-flex items-center gap-2.5 px-4 py-2.5 rounded-2xl text-[13px] font-bold text-gray-700 bg-white border border-gray-200 transition-all shadow-sm hover:shadow-[0_4px_16px_rgba(0,0,0,0.06)] hover:-translate-y-0.5 hover:bg-gray-50"
+              >
+                <Bell size={15} className="text-gray-500" />
+                <span className="hidden sm:inline">Add Reminder</span>
+                <span className="sm:hidden">Reminder</span>
+              </button>
+
+              {/* Scan Foto Shortcut */}
+              <button
+                onClick={() => setShowScanModal(true)}
+                className="ov-ql inline-flex items-center gap-2.5 px-5 py-2.5 rounded-2xl text-[13px] font-bold text-white transition-all shadow-[0_4px_16px_rgba(0,0,0,0.18)] hover:shadow-[0_8px_24px_rgba(0,0,0,0.25)] hover:-translate-y-0.5"
+                style={{
+                  background:
+                    "linear-gradient(135deg, #111827 0%, #374151 100%)",
+                }}
+              >
+                <Camera size={15} />
+                <span className="hidden sm:inline">Scan Foto</span>
+                <span className="sm:hidden">Scan</span>
+              </button>
             </div>
           </div>
 
           {/* Divider */}
           <div className="mt-6 h-px bg-gray-100" />
         </div>
+
+        {/* Modals */}
+        {showScanModal && (
+          <ScanPhotoModal onClose={() => setShowScanModal(false)} />
+        )}
+        {showReminderModal && (
+          <QuickReminderModal onClose={() => setShowReminderModal(false)} />
+        )}
 
         {/* ── STATS ── */}
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-5">
@@ -520,37 +535,6 @@ export default function OverviewClient({
                 )}
               </div>
             </div>
-          </div>
-        </div>
-
-        {/* ── BOTTOM: AI CTA ── */}
-        <div className="ov-panel bg-gray-900 rounded-2xl p-7 flex flex-col md:flex-row items-center justify-between gap-6 shadow-[0_4px_24px_rgba(0,0,0,0.08)]">
-          <div>
-            <div className="flex items-center gap-2 mb-2">
-              <Sparkles size={13} className="text-gray-400" />
-              <span className="text-[11px] font-bold text-gray-500 uppercase tracking-wider">
-                AI Assistant
-              </span>
-            </div>
-            <h3 className="text-[20px] font-black text-white leading-snug">
-              Ask anything about your notes
-            </h3>
-            <p className="text-[13px] text-gray-500 mt-1 max-w-sm">
-              Your AI study buddy is ready. Upload photos, summarize notes, or
-              quiz yourself.
-            </p>
-          </div>
-          <div className="flex flex-col items-center md:items-end gap-2 shrink-0">
-            <div className="flex gap-3">
-              <Link
-                href="/dashboard/ai-workspace"
-                className="inline-flex items-center gap-2 bg-white/10 hover:bg-white/15 border border-white/10 text-white px-5 py-2.5 rounded-xl text-[13px] font-semibold transition-all"
-              >
-                <Camera size={14} />
-                Scan Photo
-              </Link>
-            </div>
-            
           </div>
         </div>
       </div>

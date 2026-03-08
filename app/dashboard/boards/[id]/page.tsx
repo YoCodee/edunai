@@ -305,14 +305,14 @@ export default function BoardDetailPage({ params }: PageProps) {
     if (t.includes("progress"))
       return <Clock size={16} className="text-orange-400" />;
     if (t.includes("done"))
-      return <CheckCircle2 size={16} className="text-green-500" />;
+      return <CheckCircle2 size={16} className="text-[#38bcfc]" />;
     return <CircleDashed size={16} className="text-gray-400" />;
   };
 
   if (isLoading) {
     return (
       <div className="flex-1 flex flex-col items-center justify-center h-full bg-[#fbfcff]">
-        <div className="w-10 h-10 border-4 border-gray-200 border-t-green-500 rounded-full animate-spin"></div>
+        <div className="w-10 h-10 border-4 border-gray-200 border-t-[#1a1c20] rounded-full animate-spin"></div>
         <p className="mt-4 text-gray-500 font-medium">
           Loading Workspace Layout...
         </p>
@@ -374,7 +374,7 @@ export default function BoardDetailPage({ params }: PageProps) {
                 </span>
               </div>
             )}
-            <button className="w-8 h-8 rounded-full border-2 border-dashed border-gray-300 flex items-center justify-center text-gray-400 hover:text-green-500 hover:border-green-400 hover:bg-green-50 z-10 -ml-1 transition-colors">
+            <button className="w-8 h-8 rounded-full border-2 border-dashed border-gray-300 flex items-center justify-center text-gray-400 hover:text-[#38bcfc] hover:border-[#38bcfc] hover:bg-blue-50 z-10 -ml-1 transition-colors">
               <Plus size={14} strokeWidth={3} />
             </button>
           </div>
@@ -389,7 +389,7 @@ export default function BoardDetailPage({ params }: PageProps) {
             >
               <div className="w-16 h-2 bg-gray-100 rounded-full overflow-hidden">
                 <div
-                  className="h-full bg-green-500 rounded-full transition-all duration-500"
+                  className="h-full bg-[#38bcfc] rounded-full transition-all duration-500"
                   style={{ width: `${progressPercent}%` }}
                 ></div>
               </div>
@@ -408,7 +408,7 @@ export default function BoardDetailPage({ params }: PageProps) {
             </button>
             <button
               onClick={() => setIsAnalyticsOpen(true)}
-              className="p-2 text-gray-400 hover:text-green-600 hover:bg-green-50 rounded-lg transition-colors border border-transparent hover:border-green-200"
+              className="p-2 text-gray-400 hover:text-[#38bcfc] hover:bg-blue-50 rounded-lg transition-colors border border-transparent hover:border-blue-200"
               title="Analytics"
             >
               <BarChart3 size={18} />
@@ -483,7 +483,7 @@ export default function BoardDetailPage({ params }: PageProps) {
                                 className={clsx(
                                   "bg-white rounded-[16px] p-4 mb-3 shadow-[0_2px_8px_rgba(0,0,0,0.04)] border border-gray-100 hover:border-gray-300 transition-colors group select-none relative",
                                   snapshot.isDragging
-                                    ? "shadow-2xl rotate-[3deg] scale-105 border-green-200 z-50 ring-2 ring-green-500/20"
+                                    ? "shadow-2xl rotate-[3deg] scale-105 border-blue-200 z-50 ring-2 ring-[#38bcfc]/20"
                                     : "",
                                 )}
                                 onClick={() => setAssignMenuOpen(null)} // Close menu if clicking outside specifically
@@ -558,7 +558,7 @@ export default function BoardDetailPage({ params }: PageProps) {
                                             : card.id,
                                         );
                                       }}
-                                      className="w-[22px] h-[22px] rounded-full border-2 border-dashed border-gray-300 flex items-center justify-center text-gray-400 hover:text-green-500 hover:border-green-400 bg-white hover:bg-green-50 transition-colors z-10"
+                                      className="w-[22px] h-[22px] rounded-full border-2 border-dashed border-gray-300 flex items-center justify-center text-gray-400 hover:text-[#38bcfc] hover:border-[#38bcfc] bg-white hover:bg-blue-50 transition-colors z-10"
                                       title="Assign Member"
                                     >
                                       <Plus size={12} strokeWidth={3} />
@@ -624,7 +624,7 @@ export default function BoardDetailPage({ params }: PageProps) {
                                                   {isAssigned && (
                                                     <CheckCircle2
                                                       size={16}
-                                                      className="text-green-500 ml-auto shrink-0"
+                                                      className="text-[#38bcfc] ml-auto shrink-0"
                                                     />
                                                   )}
                                                 </div>
@@ -685,7 +685,7 @@ export default function BoardDetailPage({ params }: PageProps) {
                         >
                           <Plus
                             size={16}
-                            className="group-hover:text-green-500 transition-colors"
+                            className="group-hover:text-[#38bcfc] transition-colors"
                           />{" "}
                           Add new task
                         </button>
@@ -764,7 +764,7 @@ export default function BoardDetailPage({ params }: PageProps) {
           <div className="bg-white rounded-[24px] shadow-2xl w-full max-w-[500px] flex flex-col overflow-hidden">
             <div className="p-5 px-6 border-b border-gray-100 flex justify-between items-center">
               <h2 className="text-[18px] font-bold text-gray-900 flex items-center gap-2">
-                <BarChart3 size={20} className="text-green-500" />
+                <BarChart3 size={20} className="text-[#38bcfc]" />
                 Project Analytics
               </h2>
               <button
@@ -780,13 +780,13 @@ export default function BoardDetailPage({ params }: PageProps) {
                   <h3 className="text-[14px] font-bold text-gray-500 uppercase tracking-wider">
                     Overall Progress
                   </h3>
-                  <span className="text-[24px] font-extrabold text-green-500 leading-none">
+                  <span className="text-[24px] font-extrabold text-[#38bcfc] leading-none">
                     {progressPercent}%
                   </span>
                 </div>
                 <div className="w-full h-3 bg-gray-100 rounded-full overflow-hidden">
                   <div
-                    className="h-full bg-green-500 rounded-full transition-all duration-1000"
+                    className="h-full bg-[#38bcfc] rounded-full transition-all duration-1000"
                     style={{ width: `${progressPercent}%` }}
                   ></div>
                 </div>
@@ -815,10 +815,10 @@ export default function BoardDetailPage({ params }: PageProps) {
                           className={
                             "h-full rounded-full " +
                             (list.title.toLowerCase().includes("done")
-                              ? "bg-green-500"
+                              ? "bg-[#38bcfc]"
                               : list.title.toLowerCase().includes("progress")
                                 ? "bg-orange-400"
-                                : "bg-blue-400")
+                                : "bg-gray-400")
                           }
                           style={{ width: `${percentage}%` }}
                         ></div>

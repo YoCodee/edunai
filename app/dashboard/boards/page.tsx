@@ -106,7 +106,7 @@ export default function ProjectBoardsOverview() {
       {/* Header */}
       <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 mb-10 w-full max-w-7xl mx-auto">
         <div>
-          <div className="inline-flex items-center gap-2 px-3 py-1 bg-green-100 text-green-700 rounded-full text-[12px] font-bold tracking-wide uppercase mb-4 shadow-sm">
+          <div className="inline-flex items-center gap-2 px-3 py-1 bg-[#1a1c20] text-white rounded-full text-[12px] font-bold tracking-wide uppercase mb-4 shadow-sm">
             <Users size={14} /> Collaborative
           </div>
           <h1 className="text-[36px] font-bold text-gray-900 tracking-tight">
@@ -138,15 +138,15 @@ export default function ProjectBoardsOverview() {
       <div className="w-full max-w-7xl mx-auto">
         {isLoading ? (
           <div className="w-full py-20 flex flex-col items-center justify-center">
-            <div className="w-10 h-10 border-4 border-gray-200 border-t-green-500 rounded-full animate-spin"></div>
+            <div className="w-10 h-10 border-4 border-gray-200 border-t-[#1a1c20] rounded-full animate-spin"></div>
             <p className="mt-4 text-gray-500 font-medium text-[14px]">
               Loading your workspace...
             </p>
           </div>
         ) : boards.length === 0 ? (
           <div className="w-full bg-white rounded-[32px] border border-gray-100 shadow-[0_4px_20px_-10px_rgba(0,0,0,0.03)] p-12 lg:p-20 text-center flex flex-col items-center justify-center">
-            <div className="w-24 h-24 bg-green-50 rounded-full flex items-center justify-center mb-6">
-              <LayoutTemplate size={40} className="text-green-500" />
+            <div className="w-24 h-24 bg-blue-50 rounded-full flex items-center justify-center mb-6">
+              <LayoutTemplate size={40} className="text-blue-500" />
             </div>
             <h3 className="text-[24px] font-bold text-gray-900 mb-2">
               No Active Boards
@@ -157,7 +157,7 @@ export default function ProjectBoardsOverview() {
             </p>
             <button
               onClick={() => setIsCreateModalOpen(true)}
-              className="px-6 py-3.5 bg-green-500 hover:bg-green-600 text-white rounded-xl shadow-[0_10px_20px_-10px_rgba(34,197,94,0.4)] transition-all font-bold tracking-wide"
+              className="px-6 py-3.5 bg-[#1a1c20] hover:bg-[#2a2c30] text-white rounded-xl shadow-[0_10px_20px_-10px_rgba(0,0,0,0.3)] transition-all font-bold tracking-wide"
             >
               Create First Board
             </button>
@@ -170,13 +170,13 @@ export default function ProjectBoardsOverview() {
                 key={board.id}
                 className="group bg-white rounded-[24px] p-6 border border-gray-100 shadow-sm hover:shadow-[0_20px_40px_-15px_rgba(0,0,0,0.05)] hover:-translate-y-1 transition-all duration-300 relative overflow-hidden flex flex-col"
               >
-                <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-bl from-green-50 to-transparent rounded-bl-full pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity"></div>
+                <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-bl from-blue-50 to-transparent rounded-bl-full pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity"></div>
 
                 <div className="flex justify-between items-start mb-4 relative z-10">
                   <div className="w-12 h-12 bg-gray-50 rounded-xl flex items-center justify-center border border-gray-100">
                     <FolderOpen
                       size={20}
-                      className="text-gray-600 group-hover:text-green-500 transition-colors"
+                      className="text-gray-600 group-hover:text-blue-500 transition-colors"
                     />
                   </div>
                   <span
@@ -191,7 +191,7 @@ export default function ProjectBoardsOverview() {
                   </span>
                 </div>
 
-                <h3 className="text-[18px] font-bold text-gray-900 mb-2 line-clamp-1 group-hover:text-green-600 transition-colors">
+                <h3 className="text-[18px] font-bold text-gray-900 mb-2 line-clamp-1 group-hover:text-blue-600 transition-colors">
                   {board.title}
                 </h3>
 
@@ -239,7 +239,7 @@ export default function ProjectBoardsOverview() {
                   required
                   value={newTitle}
                   onChange={(e) => setNewTitle(e.target.value)}
-                  className="w-full bg-[#f8f9fc] border border-gray-200 text-gray-900 text-[14px] rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-green-500/50 focus:border-green-500 transition-all font-medium"
+                  className="w-full bg-[#f8f9fc] border border-gray-200 text-gray-900 text-[14px] rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-[#38bcfc]/50 focus:border-[#38bcfc] transition-all font-medium"
                   placeholder="e.g. History Thesis Group"
                 />
               </div>
@@ -252,13 +252,13 @@ export default function ProjectBoardsOverview() {
                   rows={3}
                   value={newDesc}
                   onChange={(e) => setNewDesc(e.target.value)}
-                  className="w-full bg-[#f8f9fc] border border-gray-200 text-gray-900 text-[14px] rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-green-500/50 focus:border-green-500 transition-all resize-none"
+                  className="w-full bg-[#f8f9fc] border border-gray-200 text-gray-900 text-[14px] rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-[#38bcfc]/50 focus:border-[#38bcfc] transition-all resize-none"
                   placeholder="What is this board for?"
                 />
               </div>
 
               <div className="mt-8">
-                <button className="w-full bg-green-500 hover:bg-green-600 text-white font-bold tracking-wide rounded-xl py-4 transition-all shadow-md mt-2">
+                <button className="w-full bg-[#1a1c20] hover:bg-[#2a2c30] text-white font-bold tracking-wide rounded-xl py-4 transition-all shadow-md mt-2">
                   Initialize Board Setup
                 </button>
               </div>
