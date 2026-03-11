@@ -303,7 +303,7 @@ export default function BoardDetailPage({ params }: PageProps) {
     if (t.includes("todo") || t.includes("to do"))
       return <CircleDashed size={16} className="text-gray-400" />;
     if (t.includes("progress"))
-      return <Clock size={16} className="text-orange-400" />;
+      return <Clock size={16} className="text-dash-primary" />;
     if (t.includes("done"))
       return <CheckCircle2 size={16} className="text-[#38bcfc]" />;
     return <CircleDashed size={16} className="text-gray-400" />;
@@ -401,7 +401,7 @@ export default function BoardDetailPage({ params }: PageProps) {
             {/* AI Auto-Breakdown Trigger */}
             <button
               onClick={() => setIsAIModalOpen(true)}
-              className="px-3 py-1.5 flex items-center gap-2 text-[#fca03e] font-bold bg-orange-50 hover:bg-orange-100 border border-orange-200 rounded-xl transition-colors text-[13px]"
+              className="px-3 py-1.5 flex items-center gap-2 text-dash-primary font-bold bg-brand-50 hover:bg-brand-100 border border-brand-200 rounded-xl transition-colors text-[13px]"
             >
               <Sparkles size={16} />{" "}
               <span className="hidden sm:inline">AI Breakdown</span>
@@ -707,9 +707,9 @@ export default function BoardDetailPage({ params }: PageProps) {
       {isAIModalOpen && (
         <div className="fixed inset-0 bg-gray-900/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
           <div className="bg-white rounded-[24px] shadow-2xl w-full max-w-[600px] flex flex-col overflow-hidden">
-            <div className="p-5 px-6 border-b border-gray-100 flex justify-between items-center bg-gradient-to-r from-orange-50 to-white">
+            <div className="p-5 px-6 border-b border-gray-100 flex justify-between items-center bg-gradient-to-r from-brand-50 to-white">
               <h2 className="text-[18px] font-bold text-gray-900 flex items-center gap-2">
-                <Sparkles size={20} className="text-[#fca03e]" />
+                <Sparkles size={20} className="text-dash-primary" />
                 Auto-Breakdown Task
               </h2>
               <button
@@ -729,7 +729,7 @@ export default function BoardDetailPage({ params }: PageProps) {
               <textarea
                 value={syllabusText}
                 onChange={(e) => setSyllabusText(e.target.value)}
-                className="w-full h-40 bg-gray-50 border border-gray-200 rounded-xl p-4 text-[14px] focus:outline-none focus:border-[#fca03e] focus:ring-2 focus:ring-[#fca03e]/20 resize-none mb-4"
+                className="w-full h-40 bg-gray-50 border border-gray-200 rounded-xl p-4 text-[14px] focus:outline-none focus:border-dash-primary focus:ring-2 focus:ring-dash-primary/20 resize-none mb-4"
                 placeholder="e.g. The final project requires researching 5 historical events, drafting an essay, designing a presentation, and preparing flashcards... (paste here)"
               ></textarea>
 
@@ -743,7 +743,7 @@ export default function BoardDetailPage({ params }: PageProps) {
                 <button
                   onClick={handleAIGeneration}
                   disabled={isGenerating || !syllabusText.trim()}
-                  className="px-5 py-2.5 rounded-xl bg-[#fca03e] hover:bg-[#ffb05c] text-[#1a1c20] font-bold transition-colors flex items-center gap-2 disabled:opacity-70"
+                  className="px-5 py-2.5 rounded-xl bg-dash-primary hover:opacity-90 text-[#1a1c20] font-bold transition-colors flex items-center gap-2 disabled:opacity-70"
                 >
                   {isGenerating ? (
                     <Loader2 size={18} className="animate-spin" />
@@ -817,7 +817,7 @@ export default function BoardDetailPage({ params }: PageProps) {
                             (list.title.toLowerCase().includes("done")
                               ? "bg-[#38bcfc]"
                               : list.title.toLowerCase().includes("progress")
-                                ? "bg-orange-400"
+                                ? "bg-brand-400"
                                 : "bg-gray-400")
                           }
                           style={{ width: `${percentage}%` }}

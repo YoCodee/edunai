@@ -66,7 +66,7 @@ export default function RegisterPage() {
                 Already a member?{" "}
                 <Link
                   href="/login"
-                  className="font-bold text-[#38bcfc] hover:text-[#18a2e4] transition-colors"
+                  className="font-bold text-[#1aaeed] hover:text-[#1594cb] transition-colors"
                 >
                   Sign in here
                 </Link>
@@ -95,7 +95,7 @@ export default function RegisterPage() {
                     required
                     value={name}
                     onChange={(e) => setName(e.target.value)}
-                    className="w-full bg-[#f8f9fc] border border-gray-200 text-gray-900 text-[14px] rounded-xl pl-11 pr-4 py-3 focus:outline-none focus:ring-2 focus:ring-[#38bcfc]/50 focus:border-[#38bcfc] transition-all"
+                    className="w-full bg-[#f8f9fc] border border-gray-200 text-gray-900 text-[14px] rounded-xl pl-11 pr-4 py-3 focus:outline-none focus:ring-2 focus:ring-[#1aaeed]/50 focus:border-[#1aaeed] transition-all"
                     placeholder="John Doe"
                   />
                 </div>
@@ -115,7 +115,7 @@ export default function RegisterPage() {
                     required
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
-                    className="w-full bg-[#f8f9fc] border border-gray-200 text-gray-900 text-[14px] rounded-xl pl-11 pr-4 py-3 focus:outline-none focus:ring-2 focus:ring-[#38bcfc]/50 focus:border-[#38bcfc] transition-all"
+                    className="w-full bg-[#f8f9fc] border border-gray-200 text-gray-900 text-[14px] rounded-xl pl-11 pr-4 py-3 focus:outline-none focus:ring-2 focus:ring-[#1aaeed]/50 focus:border-[#1aaeed] transition-all"
                     placeholder="hello@university.edu"
                   />
                 </div>
@@ -135,7 +135,7 @@ export default function RegisterPage() {
                     required
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
-                    className="w-full bg-[#f8f9fc] border border-gray-200 text-gray-900 text-[14px] rounded-xl pl-11 pr-4 py-3 focus:outline-none focus:ring-2 focus:ring-[#38bcfc]/50 focus:border-[#38bcfc] transition-all"
+                    className="w-full bg-[#f8f9fc] border border-gray-200 text-gray-900 text-[14px] rounded-xl pl-11 pr-4 py-3 focus:outline-none focus:ring-2 focus:ring-[#1aaeed]/50 focus:border-[#1aaeed] transition-all"
                     placeholder="Create a strong password"
                   />
                 </div>
@@ -225,7 +225,7 @@ export default function RegisterPage() {
             }}
           ></div>
 
-          <div className="absolute top-[20%] left-[-20%] w-[400px] h-[400px] bg-[#38bcfc] rounded-full blur-[140px] opacity-20 pointer-events-none"></div>
+          <div className="absolute top-[20%] left-[-20%] w-[400px] h-[400px] bg-[#1aaeed] rounded-full blur-[140px] opacity-20 pointer-events-none"></div>
 
           <div className="relative z-10 text-right">
             <Link
@@ -239,7 +239,7 @@ export default function RegisterPage() {
 
           <div className="relative z-10 mb-20 text-right">
             <div className="w-16 h-16 bg-white/10 backdrop-blur-md rounded-2xl flex items-center justify-center border border-white/20 mb-6 float-right clear-both">
-              <Compass size={32} className="text-[#38bcfc]" />
+              <Compass size={32} className="text-[#1aaeed]" />
             </div>
             <h1 className="text-[40px] font-medium leading-[1.1] tracking-tight mb-4 clear-both text-right">
               Start your journey <br /> to better grades.

@@ -27,8 +27,8 @@ const TOOL_META: Record<
     icon: BookOpenText,
     href: "/dashboard/notes",
     label: "Smart Notes",
-    color: "#fca03e",
-    bg: "#fffbf5",
+    color: "var(--dash-primary)",
+    bg: "var(--color-brand-50)", // Using brand-50 for faint background
   },
   boards: {
     icon: LayoutDashboard,

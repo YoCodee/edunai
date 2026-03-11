@@ -31,10 +31,10 @@ const NOTES_CONFIG: StudyNote[] = [
     description:
       "Snap photos of your notes and let AI instantly organize them for you.",
     icon: <Zap className="w-5 h-5" />,
-    bgColor: "bg-orange-50",
-    borderColor: "border-orange-200",
-    accentColor: "text-orange-600",
-    orbColor: "bg-orange-500",
+    bgColor: "bg-brand-50",
+    borderColor: "border-brand-200",
+    accentColor: "text-brand-600",
+    orbColor: "bg-brand-500",
     initialX: 300,
     initialY: 70,
     initialRotation: -6,
@@ -79,7 +79,7 @@ const NOTES_CONFIG: StudyNote[] = [
     bgColor: "bg-amber-50",
     borderColor: "border-amber-200",
     accentColor: "text-amber-600",
-    orbColor: "bg-orange-500",
+    orbColor: "bg-brand-500",
     initialX: 720,
     initialY: 340,
     initialRotation: -5,
@@ -233,7 +233,7 @@ export default function DraggableStudyNotes() {
           onMouseMove={handleMouseMove}
           onMouseUp={handleMouseUp}
           onMouseLeave={handleMouseUp}
-          className="relative h-[750px] md:h-[850px] cursor-grab active:cursor-grabbing rounded-3xl overflow-hidden"
+          className="relative h-[650px] md:h-[850px] cursor-grab active:cursor-grabbing rounded-3xl overflow-hidden"
           style={{
             perspective: "1200px",
             background: "#ffffff",
@@ -322,11 +322,11 @@ export default function DraggableStudyNotes() {
                   ? "none"
                   : "transform 0.4s cubic-bezier(0.23, 1, 0.320, 1)",
               }}
-              className={`absolute w-72 rounded-2xl p-6 cursor-grab active:cursor-grabbing select-none transition-shadow duration-300 ${note.bgColor} ${note.borderColor} border-2 shadow-[0_10px_40px_rgba(0,0,0,0.08)] hover:shadow-[0_20px_50px_rgba(0,0,0,0.12)]`}
+              className={`absolute w-44 md:w-72 rounded-2xl p-3 md:p-6 cursor-grab active:cursor-grabbing select-none transition-shadow duration-300 ${note.bgColor} ${note.borderColor} border-2 shadow-[0_10px_40px_rgba(0,0,0,0.08)] hover:shadow-[0_20px_50px_rgba(0,0,0,0.12)]`}
             >
               {/* Floating Orb */}
               <div
-                className={`absolute w-12 h-12 ${note.orbColor} rounded-full shadow-lg`}
+                className={`absolute w-6 h-6 md:w-12 md:h-12 ${note.orbColor} rounded-full shadow-lg`}
                 style={{
                   top: note.orbPosition.top,
                   right: note.orbPosition.right,
@@ -338,18 +338,24 @@ export default function DraggableStudyNotes() {
               />
 
               {/* Number Badge */}
-              <div className="absolute -top-4 -left-4 w-10 h-10 bg-white border-2 border-gray-300 rounded-full flex items-center justify-center font-bold text-base text-gray-700 shadow-[0_4px_12px_rgba(0,0,0,0.1)]">
+              <div className="absolute -top-2 -left-2 md:-top-4 md:-left-4 w-6 h-6 md:w-10 md:h-10 bg-white border-2 border-gray-300 rounded-full flex items-center justify-center font-bold text-xs md:text-base text-gray-700 shadow-[0_4px_12px_rgba(0,0,0,0.1)]">
                 0{note.id}
               </div>
 
               {/* Icon */}
-              <div className={`${note.accentColor} mb-4`}>{note.icon}</div>
+              <div
+                className={`${note.accentColor} mb-2 md:mb-4 scale-50 md:scale-100 origin-left`}
+              >
+                {note.icon}
+              </div>
 
               {/* Content */}
-              <h3 className={`text-lg font-bold mb-2 ${note.accentColor}`}>
+              <h3
+                className={`text-sm md:text-lg font-bold mb-1 md:mb-2 ${note.accentColor} leading-tight`}
+              >
                 {note.title}
               </h3>
-              <p className="text-gray-700 text-sm leading-relaxed">
+              <p className="text-gray-700 text-[10px] md:text-sm leading-snug lg:leading-relaxed">
                 {note.description}
               </p>
             </div>

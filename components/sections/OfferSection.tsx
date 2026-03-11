@@ -472,7 +472,7 @@ export default function OfferSection() {
               </div>
 
               {/* Floating points coin */}
-              <div className="flashcard-points opacity-0 absolute top-[-10px] right-2 w-[80px] h-[34px] bg-[#fca03e] rounded-xl shadow-[0_10px_20px_rgba(252,160,62,0.4)] z-20 flex items-center justify-center gap-1.5">
+              <div className="flashcard-points opacity-0 absolute top-[-10px] right-2 w-[80px] h-[34px] bg-brand-500 rounded-xl shadow-[0_10px_20px_rgba(26,174,237,0.4)] z-20 flex items-center justify-center gap-1.5">
                 <BrainCircuit size={12} className="text-white" />
                 <span className="text-[12px] font-black tracking-tight text-white">
                   + 12
@@ -572,7 +572,7 @@ export default function OfferSection() {
               <div className="flex-1 bg-[#1a1c20] border border-gray-800 shadow-xl rounded-2xl p-4 relative overflow-hidden">
                 <div className="absolute top-0 left-0 w-full h-full bg-linear-to-br from-[#38bcfc]/10 to-transparent pointer-events-none" />
                 <div className="flex items-center gap-1.5 mb-4 relative z-10 text-white">
-                  <Crown size={14} className="text-[#fca03e]" />
+                  <Crown size={14} className="text-brand-500" />
                   <span className="text-[11px] font-bold uppercase tracking-widest text-white/90">
                     Live Leaderboard
                   </span>
@@ -606,7 +606,7 @@ export default function OfferSection() {
                       className="flex items-center gap-2 py-2 border-b border-gray-800 last:border-0"
                     >
                       <span
-                        className={`text-[11px] font-black w-4 shrink-0 ${l.rank === 1 ? "text-[#fca03e]" : "text-gray-500"}`}
+                        className={`text-[11px] font-black w-4 shrink-0 ${l.rank === 1 ? "text-brand-500" : "text-gray-500"}`}
                       >
                         #{l.rank}
                       </span>
@@ -621,11 +621,11 @@ export default function OfferSection() {
                           {l.flame && (
                             <Flame
                               size={10}
-                              className="leaderboard-flame text-orange-500 will-change-transform"
+                              className="leaderboard-flame text-brand-500 will-change-transform"
                             />
                           )}
                           <span
-                            className={`${l.flame ? "text-orange-400" : "text-gray-400"} text-[9px] font-bold`}
+                            className={`${l.flame ? "text-brand-400" : "text-gray-400"} text-[9px] font-bold`}
                           >
                             {l.pts} pt
                           </span>

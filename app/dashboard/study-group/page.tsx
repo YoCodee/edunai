@@ -62,8 +62,8 @@ const liveSessions = [
     participants: 8,
     maxParticipants: 20,
     tags: ["Math", "Exam Prep"],
-    color: "from-[#fca03e] to-orange-400",
-    bg: "bg-orange-50 text-orange-700",
+    color: "from-dash-primary to-brand-400",
+    bg: "bg-brand-50 text-brand-700",
     icon: <Zap size={18} className="text-white" />,
   },
   {
@@ -98,8 +98,8 @@ const yourGroups = [
     members: 45,
     activeNow: 3,
     nextMeet: "Tomorrow, 10:00 AM",
-    icon: <Zap className="text-[#fca03e]" size={24} />,
-    color: "bg-orange-50",
+    icon: <Zap className="text-dash-primary" size={24} />,
+    color: "bg-brand-50",
   },
   {
     id: 3,
@@ -410,8 +410,8 @@ export default function StudyGroupPage() {
     if (s.includes("math") || s.includes("matematika"))
       return {
         icon: <Zap size={18} className="text-white" />,
-        color: "from-[#fca03e] to-orange-400",
-        bg: "bg-orange-50 text-orange-700",
+        color: "from-dash-primary to-brand-400",
+        bg: "bg-brand-50 text-brand-700",
       };
     if (s.includes("ekonomi") || s.includes("business"))
       return {
@@ -751,7 +751,7 @@ export default function StudyGroupPage() {
         <div className="w-full lg:w-[320px] shrink-0 flex flex-col gap-6">
           {/* Productivity Leaderboard */}
           <div className="bg-white rounded-3xl border border-gray-100 shadow-[0_8px_30px_rgba(0,0,0,0.04)] overflow-hidden relative">
-            <div className="absolute top-0 inset-x-0 h-1 bg-linear-to-r from-amber-400 via-orange-400 to-rose-400" />
+            <div className="absolute top-0 inset-x-0 h-1 bg-linear-to-r from-amber-400 via-brand-400 to-rose-400" />
 
             <div className="p-6 pb-4">
               <div className="flex items-center gap-2 mb-1">
@@ -778,7 +778,7 @@ export default function StudyGroupPage() {
                   >
                     <div className="flex items-center gap-3">
                       <div
-                        className={`w-6 text-center text-[14px] font-bold ${idx === 0 ? "text-amber-500" : idx === 1 ? "text-gray-400" : idx === 2 ? "text-orange-400" : "text-gray-300"}`}
+                        className={`w-6 text-center text-[14px] font-bold ${idx === 0 ? "text-amber-500" : idx === 1 ? "text-gray-400" : idx === 2 ? "text-brand-400" : "text-gray-300"}`}
                       >
                         #{user.rank}
                       </div>
@@ -1197,7 +1197,7 @@ export default function StudyGroupPage() {
       {isLeaderboardModalOpen && (
         <div className="fixed inset-0 bg-gray-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
           <div className="bg-white rounded-[32px] shadow-2xl w-full max-w-[500px] overflow-hidden">
-            <div className="bg-linear-to-r from-amber-400 via-orange-400 to-rose-400 p-8 text-center relative">
+            <div className="bg-linear-to-r from-amber-400 via-brand-400 to-rose-400 p-8 text-center relative">
               <button
                 onClick={() => setIsLeaderboardModalOpen(false)}
                 className="absolute top-4 right-4 p-2 text-white/70 hover:text-white rounded-full transition-colors cursor-pointer"
@@ -1238,7 +1238,7 @@ export default function StudyGroupPage() {
                 >
                   <div className="flex items-center gap-4">
                     <span
-                      className={`w-6 text-center text-[16px] font-black ${idx === 0 ? "text-amber-500" : idx === 1 ? "text-gray-400" : idx === 2 ? "text-orange-400" : "text-gray-300"}`}
+                      className={`w-6 text-center text-[16px] font-black ${idx === 0 ? "text-amber-500" : idx === 1 ? "text-gray-400" : idx === 2 ? "text-brand-400" : "text-gray-300"}`}
                     >
                       #{user.rank}
                     </span>

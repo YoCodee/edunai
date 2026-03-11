@@ -10,6 +10,32 @@
   --muted: #888888;
   --card: #ffffff;
   --border: rgba(0, 0, 0, 0.08);
+  
+  /* Brand colors based on #1aaeed (Blue) */
+  --brand-50: #e8f7fe;
+  --brand-100: #d1effd;
+  --brand-200: #a3e0fa;
+  --brand-300: #75d0f8;
+  --brand-400: #46c1f5;
+  --brand-500: #1aaeed;
+  --brand-600: #158bce;
+  --brand-700: #10689e;
+  --brand-800: #0d4e77;
+  --brand-900: #09344f;
+
+  /* Dashboard Customizable Colors */
+  --dash-main: #111111;             /* Main Dashboard Background/Base Hitam jika dibutuhkan */
+  --dash-bg: #fbfbfb;               /* Background Umum Dashboard */
+  --dash-sidebar: #ffffff;          /* Background Sidebar */
+  --dash-surface: #ffffff;          /* Card / Modal Surface */
+  --dash-border: #e2e8f0;           /* Border Garis */
+  --dash-text-primary: #111111;     /* Teks Utama */
+  --dash-text-secondary: #6b7280;   /* Teks Sekunder/Muted */
+  --dash-primary: var(--brand-500); /* Warna Aksen Utama (Biru pengganti oranye) */
+  --dash-primary-hover: var(--brand-600); /* Warna Aksen Hover */
+  --dash-success: #10b981;          /* Status Sukses (Hijau) */
+  --dash-warning: #f59e0b;          /* Status Peringatan (Kuning/Oranye) */
+  --dash-danger: #ef4444;           /* Status Bahaya/Error (Merah) */
 }
 
 @theme {
@@ -21,6 +47,31 @@
   --color-muted: var(--muted);
   --color-card: var(--card);
   --color-border: var(--border);
+  
+  --color-brand-50: var(--brand-50);
+  --color-brand-100: var(--brand-100);
+  --color-brand-200: var(--brand-200);
+  --color-brand-300: var(--brand-300);
+  --color-brand-400: var(--brand-400);
+  --color-brand-500: var(--brand-500);
+  --color-brand-600: var(--brand-600);
+  --color-brand-700: var(--brand-700);
+  --color-brand-800: var(--brand-800);
+  --color-brand-900: var(--brand-900);
+
+  /* Dashboard Theme Variables */
+  --color-dash-main: var(--dash-main);
+  --color-dash-bg: var(--dash-bg);
+  --color-dash-sidebar: var(--dash-sidebar);
+  --color-dash-surface: var(--dash-surface);
+  --color-dash-border: var(--dash-border);
+  --color-dash-text-primary: var(--dash-text-primary);
+  --color-dash-text-secondary: var(--dash-text-secondary);
+  --color-dash-primary: var(--dash-primary);
+  --color-dash-primary-hover: var(--dash-primary-hover);
+  --color-dash-success: var(--dash-success);
+  --color-dash-warning: var(--dash-warning);
+  --color-dash-danger: var(--dash-danger);
 }
 
 body {
@@ -161,8 +212,8 @@ h2,
   box-shadow: 0 8px 24px rgba(0, 0, 0, 0.07);
 }
 .ob-option.selected {
-  border-color: #fca03e;
-  background: #fffbf5;
+  border-color: var(--brand-500);
+  background: var(--brand-50);
 }
 /* ── ENTRANCE ANIMATIONS ── */
 @keyframes fade-in {

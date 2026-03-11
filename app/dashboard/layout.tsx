@@ -5,6 +5,8 @@ import { FocusModeProvider } from "@/components/ui/FocusModeContext";
 import FocusModeWrapper from "./components/FocusModeWrapper";
 import { TutorialProvider } from "@/components/ui/TutorialContext";
 import TutorialHighlight from "@/components/ui/TutorialHighlight";
+import { ThemeProvider } from "@/components/ui/ThemeContext";
+import { MobileMenuProvider } from "@/components/ui/MobileMenuContext";
 
 export default async function DashboardLayout({
   children,
@@ -31,9 +33,11 @@ export default async function DashboardLayout({
   }
 
   return (
-    <FocusModeProvider>
-      <TutorialProvider>
-        <div className="flex h-screen bg-[#fbfcff] overflow-hidden selection:bg-orange-200">
+    <ThemeProvider>
+      <MobileMenuProvider>
+        <FocusModeProvider>
+          <TutorialProvider>
+        <div className="flex h-screen bg-dash-bg overflow-hidden selection:bg-dash-primary/20">
           {/* 1. Sidebar */}
           <Sidebar />
 
@@ -41,7 +45,7 @@ export default async function DashboardLayout({
           <div className="flex-1 flex flex-col h-full overflow-hidden relative">
             {/* Background ambient light */}
             <div className="absolute top-[-20%] left-[-10%] w-[500px] h-[500px] bg-[#38bcfc] rounded-full blur-[140px] opacity-[0.05] pointer-events-none z-0"></div>
-            <div className="absolute top-[-10%] right-[-10%] w-[400px] h-[400px] bg-[#fca03e] rounded-full blur-[140px] opacity-[0.05] pointer-events-none z-0"></div>
+            <div className="absolute top-[-10%] right-[-10%] w-[400px] h-[400px] bg-dash-primary rounded-full blur-[140px] opacity-[0.05] pointer-events-none z-0"></div>
 
             {/* 2a. Header */}
             <DashboardHeader userFullName={userFullName} />
@@ -56,9 +60,11 @@ export default async function DashboardLayout({
           <FocusModeWrapper />
 
           {/* Tutorial Highlight Overlay */}
-          <TutorialHighlight />
-        </div>
-      </TutorialProvider>
-    </FocusModeProvider>
-  );
+            <TutorialHighlight />
+          </div>
+        </TutorialProvider>
+      </FocusModeProvider>
+    </MobileMenuProvider>
+  </ThemeProvider>
+);
 }

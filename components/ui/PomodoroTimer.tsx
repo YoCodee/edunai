@@ -71,11 +71,11 @@ export default function PomodoroTimer() {
         {/* Phase badge */}
         <div className="flex items-center gap-1.5">
           {phase === "work" ? (
-            <span className="text-[11px] font-bold text-orange-500 bg-orange-50 px-2 py-0.5 rounded-full tracking-wide">
+            <span className="text-[11px] font-bold text-white bg-dash-primary px-3 py-0.5 rounded-full tracking-wider shadow-sm">
               FOCUS
             </span>
           ) : (
-            <span className="text-[11px] font-bold text-blue-500 bg-blue-50 px-2 py-0.5 rounded-full tracking-wide flex items-center gap-1">
+            <span className="text-[11px] font-bold text-gray-500 bg-gray-100 px-3 py-0.5 rounded-full tracking-wider flex items-center gap-1 shadow-sm">
               <Coffee size={10} /> BREAK
             </span>
           )}
@@ -98,7 +98,7 @@ export default function PomodoroTimer() {
               cy="40"
               r={r}
               fill="none"
-              stroke={phase === "work" ? "#fca03e" : "#38bcfc"}
+              stroke={phase === "work" ? "var(--dash-primary)" : "#9ca3af"}
               strokeWidth="5"
               strokeDasharray={circ}
               strokeDashoffset={dash}
@@ -122,8 +122,8 @@ export default function PomodoroTimer() {
           </button>
           <button
             onClick={() => setRunning((r) => !r)}
-            className="flex items-center gap-1.5 px-4 py-1.5 rounded-xl text-[12px] font-bold transition-all text-white"
-            style={{ background: phase === "work" ? "#fca03e" : "#38bcfc" }}
+            className="flex items-center gap-1.5 px-4 py-1.5 rounded-xl text-[12px] font-bold transition-all text-white shadow-sm hover:shadow-md hover:opacity-90 active:scale-95"
+            style={{ background: phase === "work" ? "var(--dash-primary)" : "#9ca3af" }}
           >
             {running ? <Pause size={12} /> : <Play size={12} />}
             {running ? "Pause" : "Start"}

@@ -75,7 +75,7 @@ const COLOR_OPTIONS = [
   { value: "blue", label: "Blue", bg: "bg-blue-500" },
   { value: "purple", label: "Purple", bg: "bg-purple-500" },
   { value: "green", label: "Green", bg: "bg-green-500" },
-  { value: "orange", label: "Orange", bg: "bg-orange-500" },
+  { value: "orange", label: "Orange", bg: "bg-brand-500" },
 ];
 
 /* ──────────────────────────────────────────
@@ -303,10 +303,10 @@ export default function SmartSchedulerPage() {
         {toasts.map((toast) => (
           <div
             key={toast.id}
-            className="pointer-events-auto flex items-start gap-3 bg-white border border-orange-200 shadow-xl rounded-2xl p-4 max-w-[320px] animate-in slide-in-from-right"
+            className="pointer-events-auto flex items-start gap-3 bg-white border border-brand-200 shadow-xl rounded-2xl p-4 max-w-[320px] animate-in slide-in-from-right"
           >
-            <div className="w-9 h-9 bg-orange-100 rounded-xl flex items-center justify-center shrink-0">
-              <BellRing size={16} className="text-orange-500" />
+            <div className="w-9 h-9 bg-brand-100 rounded-xl flex items-center justify-center shrink-0">
+              <BellRing size={16} className="text-brand-500" />
             </div>
             <div className="flex-1 min-w-0">
               <p className="text-[13px] font-bold text-gray-800 truncate">
@@ -361,7 +361,7 @@ export default function SmartSchedulerPage() {
                   ? "border-green-200 bg-green-50 text-green-600"
                   : notifPermission === "denied"
                     ? "border-red-200 bg-red-50 text-red-400"
-                    : "border-gray-200 bg-white text-gray-400 hover:text-orange-500 hover:border-orange-300",
+                    : "border-gray-200 bg-white text-gray-400 hover:text-brand-500 hover:border-brand-300",
               )}
             >
               {notifPermission === "granted" ? (
@@ -434,7 +434,7 @@ export default function SmartSchedulerPage() {
                     {format(date, "d")}
                   </span>
                   {isToday && !isSelected && (
-                    <span className="absolute bottom-2 w-1.5 h-1.5 rounded-full bg-[#fca03e]" />
+                    <span className="absolute bottom-2 w-1.5 h-1.5 rounded-full bg-dash-primary" />
                   )}
                   {hasEvents && !isSelected && (
                     <span className="absolute bottom-2 w-1 h-1 rounded-full bg-gray-300" />
@@ -453,7 +453,7 @@ export default function SmartSchedulerPage() {
 
         {/* Daily Timeline */}
         <div className="flex-1 bg-white border border-gray-100/80 rounded-[32px] p-8 shadow-[0_4px_30px_-10px_rgba(0,0,0,0.05)] relative overflow-hidden">
-          <div className="absolute top-0 right-0 w-64 h-64 bg-gradient-to-br from-[#fca03e]/10 to-transparent rounded-bl-[100px] pointer-events-none" />
+          <div className="absolute top-0 right-0 w-64 h-64 bg-gradient-to-br from-dash-primary/10 to-transparent rounded-bl-[100px] pointer-events-none" />
           <div className="mb-8 flex items-center justify-between relative z-10">
             <div>
               <h2 className="text-[20px] font-bold text-gray-900">
@@ -473,7 +473,7 @@ export default function SmartSchedulerPage() {
           <div className="relative z-10 h-[500px] overflow-y-auto pr-2 custom-scrollbar">
             {isLoading ? (
               <div className="flex flex-col items-center justify-center p-10 h-64 text-center">
-                <Loader2 className="w-8 h-8 text-[#fca03e] animate-spin mb-4" />
+                <Loader2 className="w-8 h-8 text-dash-primary animate-spin mb-4" />
                 <h3 className="text-gray-500 font-medium">
                   Loading schedule...
                 </h3>
@@ -543,7 +543,7 @@ export default function SmartSchedulerPage() {
                       {
                         blue: "bg-blue-50/90 border-y border-r border-blue-200 text-blue-900 border-l-[4px] border-l-blue-500",
                         orange:
-                          "bg-orange-50/90 border-y border-r border-orange-200 text-orange-900 border-l-[4px] border-l-orange-500",
+                          "bg-brand-50/90 border-y border-r border-brand-200 text-brand-900 border-l-[4px] border-l-brand-500",
                         green:
                           "bg-green-50/90 border-y border-r border-green-200 text-green-900 border-l-[4px] border-l-green-500",
                         purple:
@@ -653,7 +653,7 @@ export default function SmartSchedulerPage() {
                       !isCurrentMonth
                         ? "text-gray-300"
                         : isSelected
-                          ? "bg-[#fca03e] text-white font-bold"
+                          ? "bg-dash-primary text-white font-bold"
                           : "text-gray-700 hover:bg-gray-100",
                     )}
                   >
@@ -685,7 +685,7 @@ export default function SmartSchedulerPage() {
                 const colorDot =
                   {
                     blue: "bg-blue-500",
-                    orange: "bg-orange-500",
+                    orange: "bg-brand-500",
                     green: "bg-green-500",
                     purple: "bg-purple-500",
                   }[ev.color] || "bg-gray-400";
@@ -705,7 +705,7 @@ export default function SmartSchedulerPage() {
                         {ev.reminder_minutes ? (
                           <Bell
                             size={10}
-                            className="text-orange-400 shrink-0"
+                            className="text-brand-400 shrink-0"
                           />
                         ) : null}
                         {ev.title}
@@ -918,7 +918,7 @@ export default function SmartSchedulerPage() {
                   {/* Reminder */}
                   <div className="space-y-1.5">
                     <label className="text-[13px] font-bold text-gray-700 ml-1 flex items-center gap-1.5">
-                      <Bell size={13} className="text-orange-400" /> Reminder
+                      <Bell size={13} className="text-brand-400" /> Reminder
                     </label>
                     <div className="grid grid-cols-4 gap-2">
                       {REMINDER_OPTIONS.map((opt) => (
@@ -934,7 +934,7 @@ export default function SmartSchedulerPage() {
                           className={clsx(
                             "py-2 px-2 rounded-xl text-[12px] font-semibold border-2 transition-all text-center",
                             singleEvent.reminderMinutes === opt.value
-                              ? "border-orange-400 bg-orange-50 text-orange-700"
+                              ? "border-brand-400 bg-brand-50 text-brand-700"
                               : "border-gray-100 bg-gray-50 text-gray-500 hover:border-gray-300",
                           )}
                         >

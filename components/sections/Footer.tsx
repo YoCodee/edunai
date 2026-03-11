@@ -6,7 +6,7 @@ export default function Footer() {
   return (
     <footer className="bg-[#1a1c20] pt-24 pb-12 relative overflow-hidden font-sans border-t border-gray-800">
       {/* Background Glow */}
-      <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full max-w-[1000px] h-[300px] bg-gradient-to-b from-[#fca03e]/10 to-transparent pointer-events-none blur-3xl"></div>
+      <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full max-w-[1000px] h-[300px] bg-gradient-to-b from-brand-500/10 to-transparent pointer-events-none blur-3xl"></div>
 
       <div className="max-w-[1200px] mx-auto px-6 relative z-10">
         <div className="grid grid-cols-1 md:grid-cols-12 gap-12 lg:gap-8 mb-20">
@@ -35,7 +35,7 @@ export default function Footer() {
                   placeholder="hello@university.edu"
                   className="bg-transparent border-none outline-none text-[14px] text-white px-4 w-full placeholder:text-gray-500"
                 />
-                <button className="w-10 h-10 rounded-full bg-[#fca03e] hover:bg-[#ffb05c] transition-colors flex items-center justify-center text-[#1a1c20] shrink-0">
+                <button className="w-10 h-10 rounded-full bg-brand-500 hover:bg-brand-400 transition-colors flex items-center justify-center text-[#1a1c20] shrink-0">
                   <Send size={16} strokeWidth={2.5} />
                 </button>
               </div>

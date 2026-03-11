@@ -61,7 +61,7 @@ const Solutions = () => {
           >
             <div className="flex h-full">
               {/* ── Sidebar ───────────────────────────────────────────── */}
-              <aside className="w-[220px] bg-white border-r border-gray-200/60 flex flex-col h-full shrink-0">
+              <aside className="hidden md:flex w-[220px] bg-white border-r border-gray-200/60 flex-col h-full shrink-0">
                 {/* Logo */}
                 <div className="px-6 pt-5 pb-4">
                   <span
@@ -98,7 +98,7 @@ const Solutions = () => {
                         <Icon
                           size={14}
                           className={
-                            item.active ? "text-[#fca03e]" : "text-gray-300"
+                            item.active ? "text-brand-500" : "text-gray-300"
                           }
                           strokeWidth={item.active ? 2.5 : 2}
                         />
@@ -120,22 +120,27 @@ const Solutions = () => {
               {/* ── Main Content ──────────────────────────────────────── */}
               <div className="flex-1 overflow-hidden flex flex-col">
                 {/* Inner scroll area */}
-                <div className="flex-1 overflow-hidden px-7 py-6 space-y-5">
+                <div className="flex-1 overflow-hidden px-4 md:px-7 py-5 md:py-6 space-y-5">
                   {/* Header row */}
                   <div className="flex items-start justify-between">
-                    <div>
-                      <p className="text-[10px] font-semibold text-gray-400 tracking-wide mb-0.5">
-                        Thursday, March 6, 2026
-                      </p>
-                      <h1 className="text-[22px] font-black text-gray-900 leading-tight">
-                        Good morning,{" "}
-                        <span className="bg-gradient-to-r from-gray-900 to-gray-400 bg-clip-text text-transparent">
-                          Alex
-                        </span>
-                      </h1>
-                      <p className="text-[11px] text-gray-400 mt-0.5">
-                        You have 3 events scheduled today.
-                      </p>
+                    <div className="flex items-start gap-2.5">
+                      <div className="md:hidden mt-1 text-gray-400">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="3" y1="12" x2="21" y2="12"></line><line x1="3" y1="6" x2="21" y2="6"></line><line x1="3" y1="18" x2="21" y2="18"></line></svg>
+                      </div>
+                      <div>
+                        <p className="text-[9px] md:text-[10px] font-semibold text-gray-400 tracking-wide mb-0.5">
+                          Thursday, March 6, 2026
+                        </p>
+                        <h1 className="text-[18px] md:text-[22px] font-black text-gray-900 leading-tight">
+                          Good morning,{" "}
+                          <span className="bg-gradient-to-r from-gray-900 to-gray-400 bg-clip-text text-transparent">
+                            Alex
+                          </span>
+                        </h1>
+                        <p className="text-[10px] md:text-[11px] text-gray-400 mt-0.5">
+                          You have 3 events scheduled today.
+                        </p>
+                      </div>
                     </div>
 
                     {/* Quick links */}
@@ -159,7 +164,7 @@ const Solutions = () => {
                   <div className="h-px bg-gray-100" />
 
                   {/* Stats row */}
-                  <div className="grid grid-cols-3 gap-4">
+                  <div className="grid grid-cols-2 md:grid-cols-3 gap-3 md:gap-4 flex-wrap">
                     {[
                       {
                         label: "Smart Notes",
@@ -213,11 +218,11 @@ const Solutions = () => {
 
                   {/* Main panels */}
                   <div
-                    className="grid grid-cols-5 gap-4"
-                    style={{ height: 200 }}
+                    className="grid grid-cols-1 md:grid-cols-5 gap-4"
+                    style={{ height: "auto", minHeight: 200 }}
                   >
                     {/* Today's Schedule */}
-                    <div className="col-span-3 bg-white rounded-2xl border border-gray-100 shadow-[0_2px_12px_rgba(0,0,0,0.04)] overflow-hidden flex flex-col">
+                    <div className="md:col-span-3 bg-white rounded-2xl border border-gray-100 shadow-[0_2px_12px_rgba(0,0,0,0.04)] overflow-hidden flex flex-col">
                       <div className="flex items-center justify-between px-5 py-3 border-b border-gray-50">
                         <div className="flex items-center gap-2">
                           <div className="w-6 h-6 rounded-lg bg-gray-100 flex items-center justify-center">
@@ -281,7 +286,7 @@ const Solutions = () => {
                     </div>
 
                     {/* Right: Notes + Boards stacked */}
-                    <div className="col-span-2 flex flex-col gap-3">
+                    <div className="md:col-span-2 flex flex-col gap-3">
                       {/* Recent Notes */}
                       <div className="bg-white rounded-2xl border border-gray-100 shadow-[0_2px_12px_rgba(0,0,0,0.04)] overflow-hidden flex-1">
                         <div className="flex items-center justify-between px-4 py-2.5 border-b border-gray-50">

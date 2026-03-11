@@ -260,7 +260,7 @@ const Hero = ({ isLoggedIn = false }: { isLoggedIn?: boolean }) => {
         {/* 2. TOP RIGHT: AI Flashcards & Study */}
         <div className="hero-floating-card opacity-0 translate-y-12 scale-90 absolute top-[10%] right-[6%] lg:right-[10%] hidden xl:block z-0 perspective-[1000px]">
           <div className="w-[240px] bg-white p-5 rounded-2xl shadow-xl shadow-purple-500/10 rotate-[6deg] relative text-black">
-            <div className="hero-flashcard-sparkle opacity-0 absolute -top-3 -right-3 w-8 h-8 bg-[#fca03e] rounded-full flex items-center justify-center shadow-[0_4px_12px_rgba(252,160,62,0.4)] transform rotate-12 z-20 text-white font-black text-[12px]">
+            <div className="hero-flashcard-sparkle opacity-0 absolute -top-3 -right-3 w-8 h-8 bg-brand-500 rounded-full flex items-center justify-center shadow-[0_4px_12px_rgba(26,174,237,0.4)] transform rotate-12 z-20 text-white font-black text-[12px]">
               +1
             </div>
 
@@ -332,7 +332,7 @@ const Hero = ({ isLoggedIn = false }: { isLoggedIn?: boolean }) => {
 
             <div className="flex justify-between items-center mb-5">
               <h3 className="font-bold text-[16px] text-foreground flex items-center gap-2">
-                <span className="w-2 h-2 rounded-full bg-[#fca03e]"></span>{" "}
+                <span className="w-2 h-2 rounded-full bg-brand-500"></span>{" "}
                 Proyek Akhir
               </h3>
               <div className="flex -space-x-1.5">
@@ -389,7 +389,7 @@ const Hero = ({ isLoggedIn = false }: { isLoggedIn?: boolean }) => {
             </h3>
 
             <div className="relative pl-5 before:absolute before:inset-0 before:left-2.5 before:w-px before:bg-gray-100 mb-2">
-              <div className="absolute left-[7px] top-1 w-2.5 h-2.5 rounded-full bg-[#fca03e] outline outline-4 outline-white"></div>
+              <div className="absolute left-[7px] top-1 w-2.5 h-2.5 rounded-full bg-brand-500 outline outline-4 outline-white"></div>
               <h4 className="text-[12px] font-bold text-gray-900 leading-tight">
                 Calculus Study Session
               </h4>
@@ -398,11 +398,11 @@ const Hero = ({ isLoggedIn = false }: { isLoggedIn?: boolean }) => {
               </p>
 
               {/* AI Suggestion Box Animating */}
-              <div className="hero-ai-suggestion overflow-hidden origin-top bg-orange-50/50 border border-orange-100 rounded-lg flex items-center gap-2">
-                <span className="px-1.5 py-0.5 bg-orange-100 text-[#fca03e] rounded text-[9px] font-bold uppercase shrink-0">
+              <div className="hero-ai-suggestion overflow-hidden origin-top bg-brand-50/50 border border-brand-100 rounded-lg flex items-center gap-2">
+                <span className="px-1.5 py-0.5 bg-brand-100 text-brand-500 rounded text-[9px] font-bold uppercase shrink-0">
                   AI Suggestion
                 </span>
-                <p className="text-[9px] font-medium text-orange-700/80 leading-tight flex-1">
+                <p className="text-[9px] font-medium text-brand-700/80 leading-tight flex-1">
                   Focus on Chapter 4 derivatives first.
                 </p>
               </div>

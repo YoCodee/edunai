@@ -36,7 +36,7 @@ const NODES: SkillNode[] = [
     label: "Smart Notes",
     icon: BookOpenText,
     href: "/dashboard/notes",
-    color: "#fca03e",
+    color: "var(--dash-primary)",
     description: "Catatan pintar berbasis AI",
     requires: ["schedule"],
   },
@@ -140,8 +140,8 @@ export default function ProgressTrackerClient({
       {/* Header */}
       <div>
         <div className="flex items-center gap-2 mb-1">
-          <TrendingUp size={18} className="text-[#fca03e]" />
-          <span className="text-[12px] font-bold text-[#fca03e] uppercase tracking-wider">
+          <TrendingUp size={18} className="text-(--dash-primary)" />
+          <span className="text-[12px] font-bold text-(--dash-primary) uppercase tracking-wider">
             Progress Tracker
           </span>
         </div>
@@ -159,7 +159,7 @@ export default function ProgressTrackerClient({
           {
             label: "Fitur Unlocked",
             value: `${unlockedCount}/${NODES.length}`,
-            color: "#fca03e",
+            color: "var(--dash-primary)",
           },
           { label: "Hari Aktif", value: totalActiveDays, color: "#34d399" },
           {

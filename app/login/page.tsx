@@ -56,7 +56,7 @@ export default function LoginPage() {
         {/* Left Side: Graphic / Branding (Hidden on mobile) */}
         <div className="hidden md:flex flex-col flex-1 bg-gradient-to-br from-[#1a1c20] to-[#2a2c30] p-12 relative overflow-hidden text-white justify-between">
           {/* Abstract background shapes */}
-          <div className="absolute -top-[20%] -left-[10%] w-[350px] h-[350px] bg-[#fca03e] rounded-full blur-[120px] opacity-20 pointer-events-none"></div>
+          <div className="absolute -top-[20%] -left-[10%] w-[350px] h-[350px] bg-[#1aaeed] rounded-full blur-[120px] opacity-20 pointer-events-none"></div>
           <div className="absolute -bottom-[20%] -right-[10%] w-[350px] h-[350px] bg-[#38bcfc] rounded-full blur-[120px] opacity-20 pointer-events-none"></div>
 
           <div className="relative z-10">
@@ -102,7 +102,7 @@ export default function LoginPage() {
                 Don't have an account?{" "}
                 <Link
                   href="/register"
-                  className="font-bold text-[#fca03e] hover:text-[#e48a29] transition-colors"
+                  className="font-bold text-[#1aaeed] hover:text-[#1594cb] transition-colors"
                 >
                   Sign up validly
                 </Link>
@@ -175,7 +175,7 @@ export default function LoginPage() {
                     required
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
-                    className="w-full bg-[#f8f9fc] border border-gray-200 text-gray-900 text-[14px] rounded-xl pl-11 pr-4 py-3 focus:outline-none focus:ring-2 focus:ring-[#fca03e]/50 focus:border-[#fca03e] transition-all"
+                    className="w-full bg-[#f8f9fc] border border-gray-200 text-gray-900 text-[14px] rounded-xl pl-11 pr-4 py-3 focus:outline-none focus:ring-2 focus:ring-[#1aaeed]/50 focus:border-[#1aaeed] transition-all"
                     placeholder="Enter your email"
                   />
                 </div>
@@ -203,7 +203,7 @@ export default function LoginPage() {
                     required
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
-                    className="w-full bg-[#f8f9fc] border border-gray-200 text-gray-900 text-[14px] rounded-xl pl-11 pr-4 py-3 focus:outline-none focus:ring-2 focus:ring-[#fca03e]/50 focus:border-[#fca03e] transition-all"
+                    className="w-full bg-[#f8f9fc] border border-gray-200 text-gray-900 text-[14px] rounded-xl pl-11 pr-4 py-3 focus:outline-none focus:ring-2 focus:ring-[#1aaeed]/50 focus:border-[#1aaeed] transition-all"
                     placeholder="Enter your password"
                   />
                 </div>
@@ -212,10 +212,10 @@ export default function LoginPage() {
               <button
                 type="submit"
                 disabled={loading}
-                className="w-full bg-[#fca03e] hover:bg-[#ffb05c] text-[#1a1c20] font-bold text-[15px] py-3.5 rounded-xl shadow-[0_4px_15px_rgba(252,160,62,0.3)] transition-all flex items-center justify-center mt-6 disabled:opacity-70 disabled:cursor-not-allowed"
+                className="w-full bg-[#1aaeed] hover:bg-[#1594cb] text-white font-bold text-[15px] py-3.5 rounded-xl shadow-[0_4px_15px_rgba(26,174,237,0.3)] transition-all flex items-center justify-center mt-6 disabled:opacity-70 disabled:cursor-not-allowed"
               >
                 {loading ? (
-                  <div className="w-5 h-5 border-2 border-[#1a1c20]/30 border-t-[#1a1c20] rounded-full animate-spin"></div>
+                  <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
                 ) : (
                   "Sign In"
                 )}

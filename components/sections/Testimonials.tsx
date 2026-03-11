@@ -14,7 +14,7 @@ const testimonialsData = [
     id: 1,
     name: "Amanda Peterson",
     role: "Computer Science Major",
-    image: "https://i.pravatar.cc/150?u=amanda",
+    image: "https://i.pravatar.cc/150?u=james",
     rating: 5.0,
     text: "Edunai has totally streamlined my semester. The AI whiteboard scanner automatically generates flashcards and notes from lectures, saving my team hours of manual typing and organization.",
   },
@@ -22,7 +22,7 @@ const testimonialsData = [
     id: 2,
     name: "James Carter",
     role: "Medical Student",
-    image: "https://i.pravatar.cc/150?u=james",
+    image: "https://i.pravatar.cc/150?u=amanda",
     rating: 5.0,
     text: "The platform is easy to use, keeps everything in one place, and helps our study group stay on top of things without extra hassle. Highly recommend it to all med students!",
   },
@@ -225,7 +225,7 @@ export default function Testimonials() {
             >
               <path
                 d="M0 80L220 220L440 80V260C440 271.046 431.046 280 420 280H20C8.95431 280 0 271.046 0 260V80Z"
-                fill="#8b5cf6"
+                fill="#1aaeed"
               />
             </svg>
 
@@ -237,7 +237,7 @@ export default function Testimonials() {
               xmlns="http://www.w3.org/2000/svg"
               className="absolute top-0 z-50"
             >
-              <path ref={flapRef} d="M0 80L220 200L440 80H0Z" fill="#9f75ff" />
+              <path ref={flapRef} d="M0 80L220 200L440 80H0Z" fill="#46c1f5" />
             </svg>
 
             <svg

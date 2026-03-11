@@ -77,7 +77,7 @@ const AFTER_ITEMS = [
   },
   {
     icon: MessageSquare,
-    color: "bg-orange-50 text-orange-500",
+    color: "bg-brand-50 text-brand-500",
     label: "Real-time team discussions",
   },
   {
@@ -232,7 +232,7 @@ export default function BeforeAfter() {
         hubRef.current,
         {
           boxShadow:
-            "0 0 0 32px rgba(252,160,62,0), 0 20px 60px rgba(252,160,62,0.6)",
+            "0 0 0 32px rgba(26,174,237,0), 0 20px 60px rgba(26,174,237,0.6)",
           scale: 1.08,
           duration: 0.06,
           yoyo: true,
@@ -316,7 +316,7 @@ export default function BeforeAfter() {
         className="absolute inset-0 pointer-events-none"
         style={{
           background:
-            "radial-gradient(ellipse 60% 55% at 50% 75%, rgba(252,160,62,0.06) 0%, transparent 70%)",
+            "radial-gradient(ellipse 60% 55% at 50% 75%, rgba(26,174,237,0.06) 0%, transparent 70%)",
         }}
       />
 
@@ -340,32 +340,33 @@ export default function BeforeAfter() {
         </div>
 
         {/* ── Diagram canvas ──────────────────────────────────────── */}
-        <div
-          className="relative w-full max-w-[1000px] mx-auto"
-          style={{ height: 360 }}
-        >
-          {/* ════ SVG layer ════════════════════════════════════════ */}
-          <svg
-            viewBox="0 0 1000 360"
+        <div className="relative w-full max-w-[1000px] mx-auto h-[220px] sm:h-[300px] md:h-[360px] flex justify-center mt-6 md:mt-0">
+          <div
+            className="absolute top-0 origin-top scale-[0.45] sm:scale-[0.65] md:scale-100"
+            style={{ width: 1000, height: 360 }}
+          >
+            {/* ════ SVG layer ════════════════════════════════════════ */}
+            <svg
+              viewBox="0 0 1000 360"
             className="absolute inset-0 w-full h-full pointer-events-none"
             style={{ overflow: "visible" }}
           >
             <defs>
-              {/* Left-path gradient: gray → orange */}
+              {/* Left-path gradient: gray → brand */}
               <linearGradient id="leftGrad" x1="0%" y1="0%" x2="100%" y2="0%">
                 <stop offset="0%" stopColor="#e5e7eb" />
-                <stop offset="100%" stopColor="#fca03e" />
+                <stop offset="100%" stopColor="#1aaeed" />
               </linearGradient>
-              {/* Right-path gradient: orange → orange-light */}
+              {/* Right-path gradient: brand → brand-light */}
               <linearGradient id="rightGrad" x1="0%" y1="0%" x2="100%" y2="0%">
-                <stop offset="0%" stopColor="#fca03e" />
-                <stop offset="100%" stopColor="#ffcc88" />
+                <stop offset="0%" stopColor="#1aaeed" />
+                <stop offset="100%" stopColor="#75d0f8" />
               </linearGradient>
               {/* Orb radial glow */}
               <radialGradient id="orbGlow" cx="50%" cy="50%" r="50%">
-                <stop offset="0%" stopColor="#fca03e" stopOpacity="0.85" />
-                <stop offset="45%" stopColor="#fca03e" stopOpacity="0.3" />
-                <stop offset="100%" stopColor="#fca03e" stopOpacity="0" />
+                <stop offset="0%" stopColor="#1aaeed" stopOpacity="0.85" />
+                <stop offset="45%" stopColor="#1aaeed" stopOpacity="0.3" />
+                <stop offset="100%" stopColor="#1aaeed" stopOpacity="0" />
               </radialGradient>
               {/* Blur glow filter */}
               <filter id="glow">
@@ -438,7 +439,7 @@ export default function BeforeAfter() {
                   cx={-200}
                   cy={180}
                   r={5}
-                  fill="#fca03e"
+                  fill="#1aaeed"
                   opacity={0}
                   filter="url(#glow)"
                 />
@@ -465,7 +466,7 @@ export default function BeforeAfter() {
                   cx={-200}
                   cy={180}
                   r={5}
-                  fill="#ffb05c"
+                  fill="#46c1f5"
                   opacity={0}
                   filter="url(#glow)"
                 />
@@ -503,8 +504,8 @@ export default function BeforeAfter() {
               ref={hubRef}
               className="w-[165px] h-[165px] rounded-[36px] flex items-center justify-center transition-transform duration-300 hover:scale-105"
               style={{
-                background: "linear-gradient(135deg, #fca03e 0%, #ffb05c 100%)",
-                boxShadow: "0 24px 48px rgba(252,160,62,0.38)",
+                background: "linear-gradient(135deg, #1aaeed 0%, #46c1f5 100%)",
+                boxShadow: "0 24px 48px rgba(26,174,237,0.38)",
               }}
             >
               <span
@@ -540,6 +541,7 @@ export default function BeforeAfter() {
               </div>
             ))}
           </div>
+        </div>
         </div>
         {/* end diagram */}
       </div>

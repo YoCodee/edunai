@@ -107,7 +107,7 @@ export default function NavbarClient({ initialUser }: { initialUser: any }) {
             <>
               {/* Avatar chip */}
               <div className="hidden md:flex items-center gap-2.5 bg-white border border-black/6 rounded-full pl-1 pr-3 py-1 shadow-sm">
-                <div className="w-7 h-7 rounded-full bg-[#fca03e] flex items-center justify-center text-white font-bold text-[11px] shadow-sm overflow-hidden shrink-0">
+                <div className="w-7 h-7 rounded-full bg-brand-500 flex items-center justify-center text-white font-bold text-[11px] shadow-sm overflow-hidden shrink-0">
                   {user.avatar_url ? (
                     <img
                       src={user.avatar_url}
@@ -145,7 +145,7 @@ export default function NavbarClient({ initialUser }: { initialUser: any }) {
 
               <Link
                 href="/register"
-                className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl text-[14px] font-bold text-white bg-[#2d73ff] hover:bg-[#1a5fe6] transition-all shadow-[0_4px_14px_rgba(45,115,255,0.35)] hover:shadow-[0_6px_20px_rgba(45,115,255,0.25)]"
+                className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl text-[14px] font-bold text-white bg-[#1aaeed] hover:bg-[#1594cb] transition-all shadow-[0_4px_14px_rgba(26,174,237,0.35)] hover:shadow-[0_6px_20px_rgba(26,174,237,0.25)]"
               >
                 Get Started Free
               </Link>
@@ -196,7 +196,7 @@ export default function NavbarClient({ initialUser }: { initialUser: any }) {
               onClick={() => setMobileOpen(false)}
               className="px-4 py-3 rounded-xl text-[15px] font-bold text-white text-center transition-all"
               style={{
-                background: user ? "#1a1c20" : "#2d73ff",
+                background: user ? "#1a1c20" : "#1aaeed",
               }}
             >
               {user ? "Go to Dashboard" : "Get Started Free"}

@@ -19,8 +19,8 @@ export default function HowItWorks() {
       description:
         "Our Gemini-powered engine instantly transcribes, structures, and organizes the insights.",
       icon: Sparkles,
-      color: "text-orange-500",
-      bgColor: "bg-orange-50",
+      color: "text-brand-500",
+      bgColor: "bg-brand-50",
     },
     {
       id: 3,

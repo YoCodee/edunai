@@ -61,7 +61,7 @@ export default function CTASection() {
 
             <div className="flex items-start gap-4">
               <div className="w-12 h-12 rounded-2xl bg-[#131b26] flex items-center justify-center shrink-0 shadow-lg shadow-gray-200/50">
-                <Package className="text-orange-400" size={20} />
+                <Package className="text-brand-400" size={20} />
               </div>
               <div>
                 <h4 className="text-[15px] font-bold text-gray-900 mb-0.5">

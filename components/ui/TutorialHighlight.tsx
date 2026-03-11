@@ -39,7 +39,7 @@ export default function TutorialHighlight() {
   const [spotlightRect, setSpotlightRect] = useState<SpotlightRect | null>(
     null,
   );
-  const [tooltipPos, setTooltipPos] = useState({ top: 0, left: 0 });
+  const [tooltipPos, setTooltipPos] = useState({ top: 0, left: 0, width: 320 });
   const [mounted, setMounted] = useState(false);
   const [entering, setEntering] = useState(false);
   const tooltipRef = useRef<HTMLDivElement>(null);
@@ -61,22 +61,37 @@ export default function TutorialHighlight() {
     setSpotlightRect(paddedRect);
 
     // calc tooltip position
-    const tooltipW = 320;
-    const tooltipH = 220;
+    const isMobile = window.innerWidth < 768;
     const vpW = window.innerWidth;
     const vpH = window.innerHeight + window.scrollY;
+
+    const tooltipW = isMobile ? vpW - 32 : 320;
+    const tooltipH = tooltipRef.current?.offsetHeight || 250;
 
     let top = rect.top + rect.height / 2 - tooltipH / 2;
     let left = rect.left + rect.width + 24;
 
-    if (left + tooltipW > vpW - 16) {
-      left = rect.left - tooltipW - 24;
+    if (isMobile) {
+      left = 16; // Center horizontally with 16px margins
+      top = rect.top + rect.height + 24; // Place below the target
+
+      // If it goes off the bottom of the screen, place it above the target
+      if (top + tooltipH > vpH - 16) {
+        top = rect.top - tooltipH - 24;
+      }
+    } else {
+      // Desktop left/right positioning
+      if (left + tooltipW > vpW - 16) {
+        left = rect.left - tooltipW - 24;
+      }
+      if (left < 16) left = 16;
     }
-    if (left < 16) left = 16;
+
+    // Strict boundaries
     if (top < 80) top = 80;
     if (top + tooltipH > vpH - 16) top = vpH - tooltipH - 16;
 
-    setTooltipPos({ top, left });
+    setTooltipPos({ top, left, width: tooltipW });
   }, [currentStepData]);
 
   useEffect(() => {
@@ -140,9 +155,9 @@ export default function TutorialHighlight() {
           to   { opacity: 1; transform: translateX(0)  scale(1); }
         }
         @keyframes tut-pulse-ring {
-          0%   { box-shadow: 0 0 0 0   rgba(251,160,62,0.55); }
-          70%  { box-shadow: 0 0 0 10px rgba(251,160,62,0); }
-          100% { box-shadow: 0 0 0 0   rgba(251,160,62,0); }
+          0%   { box-shadow: 0 0 0 0   rgba(26,174,237,0.55); }
+          70%  { box-shadow: 0 0 0 10px rgba(26,174,237,0); }
+          100% { box-shadow: 0 0 0 0   rgba(26,174,237,0); }
         }
         @keyframes tut-shimmer {
           0%   { background-position: -200% center; }
@@ -199,7 +214,7 @@ export default function TutorialHighlight() {
           width: spotlightRect.width + 4,
           height: spotlightRect.height + 4,
           borderRadius: 16,
-          border: "2px solid rgba(251,160,62,0.8)",
+          border: "2px solid rgba(26,174,237,0.8)",
           transition: "all 0.35s cubic-bezier(0.34,1.56,0.64,1)",
         }}
       />
@@ -219,7 +234,7 @@ export default function TutorialHighlight() {
             width: 12,
             height: 12,
             borderRadius: 3,
-            background: "#fca03e",
+            background: "var(--dash-primary)",
             top:
               pos.top !== undefined
                 ? spotlightRect.top - window.scrollY + pos.top
@@ -249,7 +264,7 @@ export default function TutorialHighlight() {
           zIndex: 10001,
           top: tooltipPos.top - window.scrollY,
           left: tooltipPos.left,
-          width: 320,
+          width: tooltipPos.width || 320,
         }}
       >
         <div
@@ -258,8 +273,8 @@ export default function TutorialHighlight() {
             backdropFilter: "blur(20px)",
             borderRadius: 20,
             boxShadow:
-              "0 24px 60px rgba(0,0,0,0.18), 0 4px 16px rgba(251,160,62,0.12), inset 0 1px 0 rgba(255,255,255,0.9)",
-            border: "1px solid rgba(251,160,62,0.2)",
+              "0 24px 60px rgba(0,0,0,0.18), 0 4px 16px rgba(26,174,237,0.12), inset 0 1px 0 rgba(255,255,255,0.9)",
+            border: "1px solid rgba(26,174,237,0.2)",
             overflow: "hidden",
           }}
         >
@@ -267,7 +282,7 @@ export default function TutorialHighlight() {
           <div
             style={{
               height: 3,
-              background: `linear-gradient(90deg, #fca03e ${progressPct}%, #f3e8d0 ${progressPct}%)`,
+              background: `linear-gradient(90deg, var(--dash-primary) ${progressPct}%, #e0f0ff ${progressPct}%)`,
               transition: "background 0.4s ease",
             }}
           />
@@ -288,18 +303,18 @@ export default function TutorialHighlight() {
                     display: "flex",
                     alignItems: "center",
                     gap: 5,
-                    background: "linear-gradient(135deg, #fff7ed, #fef3c7)",
-                    border: "1px solid #fed7aa",
+                    background: "linear-gradient(135deg, #f0f9ff, #e0f2fe)",
+                    border: "1px solid #bae6fd",
                     borderRadius: 20,
                     padding: "3px 10px",
                   }}
                 >
-                  <Sparkles size={10} style={{ color: "#f59e0b" }} />
+                  <Sparkles size={10} style={{ color: "var(--dash-primary)" }} />
                   <span
                     style={{
                       fontSize: 10,
                       fontWeight: 700,
-                      color: "#d97706",
+                      color: "var(--dash-primary)",
                       letterSpacing: "0.06em",
                     }}
                   >
@@ -358,8 +373,8 @@ export default function TutorialHighlight() {
                   width: 40,
                   height: 40,
                   borderRadius: 12,
-                  background: "linear-gradient(135deg, #fff7ed, #fed7aa)",
-                  border: "1px solid #fde68a",
+                  background: "linear-gradient(135deg, #f0f9ff, #bae6fd)",
+                  border: "1px solid #7dd3fc",
                   display: "flex",
                   alignItems: "center",
                   justifyContent: "center",
@@ -413,9 +428,9 @@ export default function TutorialHighlight() {
                     borderRadius: 99,
                     background:
                       i === currentStep
-                        ? "#fca03e"
+                        ? "var(--dash-primary)"
                         : i < currentStep
-                          ? "#fed7aa"
+                          ? "#bae6fd"
                           : "#e5e7eb",
                     border: "none",
                     cursor: "pointer",
@@ -471,7 +486,7 @@ export default function TutorialHighlight() {
                   borderRadius: 12,
                   background: isLast
                     ? "linear-gradient(135deg, #10b981, #059669)"
-                    : "linear-gradient(135deg, #fca03e, #f59e0b)",
+                    : "linear-gradient(135deg, #1aaeed, #0284c7)",
                   border: "none",
                   fontSize: 13,
                   fontWeight: 700,
@@ -479,7 +494,7 @@ export default function TutorialHighlight() {
                   cursor: "pointer",
                   boxShadow: isLast
                     ? "0 4px 12px rgba(16,185,129,0.3)"
-                    : "0 4px 12px rgba(252,160,62,0.35)",
+                    : "0 4px 12px rgba(26,174,237,0.35)",
                   transition: "all 0.15s ease",
                 }}
                 onMouseEnter={(e) => {
