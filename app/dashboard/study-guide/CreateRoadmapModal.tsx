@@ -10,6 +10,17 @@ import {
   Plus,
   Trash2,
   Check,
+  BookOpen,
+  Target,
+  Calendar,
+  LayoutDashboard,
+  Zap,
+  Globe,
+  Music,
+  Palette,
+  Code,
+  Beaker,
+  LucideIcon,
 } from "lucide-react";
 import {
   createRoadmapFromTopic,
@@ -27,19 +38,19 @@ interface CreateRoadmapModalProps {
   userNotes: { id: string; title: string; created_at: string }[];
 }
 
-const EMOJI_OPTIONS = [
-  "📚",
-  "📖",
-  "🧮",
-  "🔬",
-  "💻",
-  "🎨",
-  "🎵",
-  "🌍",
-  "📊",
-  "⚡",
-  "🧪",
-  "🏛️",
+const ICON_OPTIONS: { name: string; icon: LucideIcon }[] = [
+  { name: "BookOpen", icon: BookOpen },
+  { name: "FileText", icon: FileText },
+  { name: "Target", icon: Target },
+  { name: "Calendar", icon: Calendar },
+  { name: "Code", icon: Code },
+  { name: "Palette", icon: Palette },
+  { name: "Music", icon: Music },
+  { name: "Globe", icon: Globe },
+  { name: "LayoutDashboard", icon: LayoutDashboard },
+  { name: "Zap", icon: Zap },
+  { name: "Beaker", icon: Beaker },
+  { name: "Sparkles", icon: Sparkles },
 ];
 
 export default function CreateRoadmapModal({
@@ -55,7 +66,7 @@ export default function CreateRoadmapModal({
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const [subjectType, setSubjectType] = useState<"course" | "topic">("topic");
-  const [emoji, setEmoji] = useState("📚");
+  const [iconName, setIconName] = useState("BookOpen");
 
   // AI from Notes
   const [selectedNoteIds, setSelectedNoteIds] = useState<string[]>([]);
@@ -91,7 +102,7 @@ export default function CreateRoadmapModal({
           title,
           description,
           subjectType,
-          emoji
+          iconName
         );
       } else if (activeTab === "ai-notes") {
         if (selectedNoteIds.length === 0) {
@@ -108,7 +119,7 @@ export default function CreateRoadmapModal({
           selectedNoteIds,
           title,
           subjectType,
-          emoji
+          iconName
         );
       } else {
         // Manual - flatten layers to units with position info
@@ -139,7 +150,7 @@ export default function CreateRoadmapModal({
           title,
           description,
           subjectType,
-          emoji,
+          iconName,
           unitsWithPositions
         );
       }
@@ -244,7 +255,7 @@ export default function CreateRoadmapModal({
               className={clsx(
                 "flex-1 py-3 px-4 text-[13px] font-semibold flex items-center justify-center gap-2 transition-colors",
                 activeTab === tab.id
-                  ? "text-indigo-600 border-b-2 border-indigo-600 bg-indigo-50/50"
+                  ? "text-gray-900 border-b-2 border-gray-900 bg-gray-50"
                   : "text-gray-500 hover:text-gray-700 hover:bg-gray-50"
               )}
             >
@@ -272,7 +283,7 @@ export default function CreateRoadmapModal({
                     ? "Contoh: Belajar Python untuk Pemula"
                     : "Contoh: Persiapan UAS Kalkulus"
                 }
-                className="w-full px-4 py-2.5 rounded-xl border border-gray-200 text-[14px] focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100 outline-none transition-all"
+                className="w-full px-4 py-2.5 rounded-xl border border-gray-200 text-[14px] focus:border-gray-900 focus:ring-2 focus:ring-gray-100 outline-none transition-all"
               />
             </div>
 
@@ -288,7 +299,7 @@ export default function CreateRoadmapModal({
                   onChange={(e) => setDescription(e.target.value)}
                   placeholder="Deskripsi singkat tentang roadmap ini..."
                   rows={2}
-                  className="w-full px-4 py-2.5 rounded-xl border border-gray-200 text-[14px] focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100 outline-none transition-all resize-none"
+                  className="w-full px-4 py-2.5 rounded-xl border border-gray-200 text-[14px] focus:border-gray-900 focus:ring-2 focus:ring-gray-100 outline-none transition-all resize-none"
                 />
               </div>
             )}
@@ -306,7 +317,7 @@ export default function CreateRoadmapModal({
                     className={clsx(
                       "flex-1 py-2 px-3 rounded-lg text-[13px] font-medium border transition-all",
                       subjectType === "topic"
-                        ? "border-indigo-400 bg-indigo-50 text-indigo-700"
+                        ? "border-gray-900 bg-gray-900 text-white"
                         : "border-gray-200 text-gray-600 hover:bg-gray-50"
                     )}
                   >
@@ -318,7 +329,7 @@ export default function CreateRoadmapModal({
                     className={clsx(
                       "flex-1 py-2 px-3 rounded-lg text-[13px] font-medium border transition-all",
                       subjectType === "course"
-                        ? "border-indigo-400 bg-indigo-50 text-indigo-700"
+                        ? "border-gray-900 bg-gray-900 text-white"
                         : "border-gray-200 text-gray-600 hover:bg-gray-50"
                     )}
                   >
@@ -329,24 +340,27 @@ export default function CreateRoadmapModal({
 
               <div>
                 <label className="block text-[13px] font-semibold text-gray-700 mb-1.5">
-                  Emoji
+                  Icon
                 </label>
                 <div className="flex gap-1 flex-wrap">
-                  {EMOJI_OPTIONS.slice(0, 6).map((e) => (
-                    <button
-                      key={e}
-                      type="button"
-                      onClick={() => setEmoji(e)}
-                      className={clsx(
-                        "w-9 h-9 rounded-lg text-[18px] transition-all",
-                        emoji === e
-                          ? "bg-indigo-100 ring-2 ring-indigo-400"
-                          : "hover:bg-gray-100"
-                      )}
-                    >
-                      {e}
-                    </button>
-                  ))}
+                  {ICON_OPTIONS.slice(0, 6).map((option) => {
+                    const Icon = option.icon;
+                    return (
+                      <button
+                        key={option.name}
+                        type="button"
+                        onClick={() => setIconName(option.name)}
+                        className={clsx(
+                          "w-9 h-9 rounded-lg transition-all flex items-center justify-center",
+                          iconName === option.name
+                            ? "bg-gray-900 ring-2 ring-gray-900 text-white"
+                            : "hover:bg-gray-100 text-gray-500"
+                        )}
+                      >
+                        <Icon size={16} strokeWidth={2} />
+                      </button>
+                    );
+                  })}
                 </div>
               </div>
             </div>
@@ -354,10 +368,10 @@ export default function CreateRoadmapModal({
 
           {/* Tab-specific Content */}
           {activeTab === "ai-topic" && (
-            <div className="bg-gradient-to-br from-indigo-50 to-purple-50 rounded-xl p-4 border border-indigo-100">
+            <div className="bg-gray-50 rounded-xl p-4 border border-gray-200">
               <div className="flex items-start gap-3">
                 <div className="w-10 h-10 bg-white rounded-xl flex items-center justify-center shadow-sm">
-                  <Sparkles size={18} className="text-indigo-500" />
+                  <Sparkles size={18} className="text-gray-700" />
                 </div>
                 <div>
                   <h4 className="text-[14px] font-bold text-gray-800 mb-1">
@@ -395,7 +409,7 @@ export default function CreateRoadmapModal({
                       className={clsx(
                         "w-full text-left px-3 py-2.5 rounded-lg flex items-center gap-3 transition-all",
                         selectedNoteIds.includes(note.id)
-                          ? "bg-indigo-50 border border-indigo-200"
+                          ? "bg-gray-100 border border-gray-900"
                           : "hover:bg-gray-50 border border-transparent"
                       )}
                     >
@@ -403,7 +417,7 @@ export default function CreateRoadmapModal({
                         className={clsx(
                           "w-5 h-5 rounded-md flex items-center justify-center border-2 transition-all",
                           selectedNoteIds.includes(note.id)
-                            ? "bg-indigo-500 border-indigo-500"
+                            ? "bg-gray-900 border-gray-900"
                             : "border-gray-300"
                         )}
                       >
@@ -419,7 +433,7 @@ export default function CreateRoadmapModal({
                 </div>
               )}
               {selectedNoteIds.length > 0 && (
-                <p className="text-[12px] text-indigo-600 mt-2">
+                <p className="text-[12px] text-gray-700 mt-2">
                   {selectedNoteIds.length} catatan dipilih
                 </p>
               )}
@@ -443,7 +457,7 @@ export default function CreateRoadmapModal({
                     {/* Layer Header */}
                     <div className="flex items-center justify-between mb-3">
                       <div className="flex items-center gap-2">
-                        <span className="w-7 h-7 bg-indigo-100 rounded-lg text-[12px] font-bold text-indigo-600 flex items-center justify-center">
+                        <span className="w-7 h-7 bg-gray-900 rounded-lg text-[12px] font-bold text-white flex items-center justify-center">
                           L{layerIndex + 1}
                         </span>
                         <span className="text-[13px] font-semibold text-gray-700">
@@ -457,7 +471,7 @@ export default function CreateRoadmapModal({
                         <button
                           type="button"
                           onClick={() => removeLayer(layerIndex)}
-                          className="p-1.5 rounded-lg text-red-500 hover:bg-red-50 transition-colors"
+                          className="p-1.5 rounded-lg text-gray-700 hover:bg-gray-100 transition-colors"
                           title="Hapus level"
                         >
                           <Trash2 size={14} />
@@ -483,13 +497,13 @@ export default function CreateRoadmapModal({
                                 updateManualUnit(layerIndex, unitIndex, "title", e.target.value)
                               }
                               placeholder="Judul unit"
-                              className="flex-1 px-2.5 py-1.5 rounded-lg border border-gray-200 text-[13px] focus:border-indigo-400 outline-none"
+                              className="flex-1 px-2.5 py-1.5 rounded-lg border border-gray-200 text-[13px] focus:border-gray-900 outline-none"
                             />
                             {layer.units.length > 1 && (
                               <button
                                 type="button"
                                 onClick={() => removeUnitFromLayer(layerIndex, unitIndex)}
-                                className="p-1 rounded text-red-400 hover:bg-red-50 transition-colors"
+                                className="p-1 rounded text-gray-700 hover:bg-gray-100 transition-colors"
                               >
                                 <X size={12} />
                               </button>
@@ -502,7 +516,7 @@ export default function CreateRoadmapModal({
                             }
                             placeholder="Ringkasan materi (opsional)"
                             rows={1}
-                            className="w-full px-2.5 py-1.5 rounded-lg border border-gray-200 text-[12px] focus:border-indigo-400 outline-none resize-none"
+                            className="w-full px-2.5 py-1.5 rounded-lg border border-gray-200 text-[12px] focus:border-gray-900 outline-none resize-none"
                           />
                         </div>
                       ))}
@@ -512,7 +526,7 @@ export default function CreateRoadmapModal({
                     <button
                       type="button"
                       onClick={() => addUnitToLayer(layerIndex)}
-                      className="mt-2 w-full py-1.5 rounded-lg border border-dashed border-gray-300 text-[12px] text-gray-500 hover:border-indigo-300 hover:text-indigo-600 transition-colors flex items-center justify-center gap-1"
+                      className="mt-2 w-full py-1.5 rounded-lg border border-dashed border-gray-300 text-[12px] text-gray-500 hover:border-gray-900 hover:text-gray-900 transition-colors flex items-center justify-center gap-1"
                     >
                       <Plus size={12} /> Tambah Unit di Level Ini
                     </button>
@@ -524,7 +538,7 @@ export default function CreateRoadmapModal({
               <button
                 type="button"
                 onClick={addManualLayer}
-                className="mt-3 w-full py-2.5 rounded-xl border-2 border-dashed border-gray-200 text-[13px] text-gray-500 hover:border-indigo-300 hover:text-indigo-600 transition-colors flex items-center justify-center gap-2"
+                className="mt-3 w-full py-2.5 rounded-xl border-2 border-dashed border-gray-200 text-[13px] text-gray-500 hover:border-gray-900 hover:text-gray-900 transition-colors flex items-center justify-center gap-2"
               >
                 <Plus size={14} /> Tambah Level Berikutnya
               </button>
@@ -552,7 +566,7 @@ export default function CreateRoadmapModal({
           <button
             onClick={handleSubmit}
             disabled={isLoading}
-            className="px-5 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white text-[13px] font-bold shadow-md disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2 transition-all"
+            className="px-5 py-2.5 rounded-xl bg-[#1a1c20] hover:bg-[#2a2c30] text-white text-[13px] font-bold shadow-md disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2 transition-all"
           >
             {isLoading ? (
               <>
