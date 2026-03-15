@@ -3,7 +3,8 @@
 import { useState, useEffect, useRef } from "react";
 import { useParams, useSearchParams, useRouter } from "next/navigation";
 import { createClient } from "@/utils/supabase/client";
-import { sendGroupMessage, getNoteContent } from "../actions";
+import { sendGroupMessage, getNoteContent, summarizeStudyGroup } from "../actions";
+import ReactMarkdown from "react-markdown";
 import {
   ArrowLeft,
   Users,
@@ -18,7 +19,353 @@ import {
   MonitorUp,
   Settings,
   X,
+  CircleDashed,
+  CheckCircle2,
+  Clock,
+  ChevronRight,
+  ChevronDown,
+  Layout,
+  CheckSquare,
+  Sparkles
 } from "lucide-react";
+
+// --- Sub-components for Project Board Integration ---
+
+function BoardWidget({ boardId, supabase, onOpenBoard, isMe, hasEditAccess }: { boardId: string, supabase: any, onOpenBoard: (id: string) => void, isMe: boolean, hasEditAccess: boolean }) {
+  const [boardInfo, setBoardInfo] = useState<any>(null);
+  const [tasks, setTasks] = useState<any[]>([]);
+  const [lists, setLists] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    async function fetchPreview() {
+      const { data: bData } = await supabase.from("boards").select("title").eq("id", boardId).single();
+      if (bData) setBoardInfo(bData);
+
+      const { data: listsData } = await supabase.from("board_lists").select("id, title").eq("board_id", boardId).order('position');
+      if (listsData && listsData.length > 0) {
+        setLists(listsData);
+        const listIds = listsData.map((l: any) => l.id);
+        const { data: cards } = await supabase
+          .from("board_cards")
+          .select("id, title, list_id")
+          .in("list_id", listIds)
+          .limit(3);
+        if (cards) setTasks(cards);
+      }
+      setLoading(false);
+    }
+    fetchPreview();
+  }, [boardId]);
+
+  const handleMoveTask = async (cardId: string, newListId: string) => {
+    // Optimistic
+    setTasks(prev => prev.map(t => t.id === cardId ? { ...t, list_id: newListId } : t));
+    // Re-use logic from board actions, or direct supabase call here for simplicity in widget:
+    await supabase.from("board_cards").update({ list_id: newListId }).eq("id", cardId);
+  };
+
+  if (loading) return <div className="mt-2 p-3 bg-white/50 animate-pulse rounded-xl h-20 w-64"></div>;
+
+  return (
+    <div className={`mt-2 border rounded-xl p-3 shadow-sm min-w-[260px] ${isMe ? "bg-white/10 border-white/20 text-white" : "bg-gray-50 border-gray-200 text-gray-800"}`}>
+      <div className="flex items-center justify-between mb-3 border-b pb-2" style={{ borderColor: isMe ? "rgba(255,255,255,0.2)" : "rgba(0,0,0,0.05)" }}>
+        <h4 className="font-bold flex items-center gap-1.5 text-[13px]"><Layout size={14} /> {boardInfo?.title || "Project Board"}</h4>
+        <button onClick={() => onOpenBoard(boardId)} className={`text-[11px] font-bold px-2 py-1 rounded-md transition-colors ${isMe ? "bg-white/20 hover:bg-white/30" : "bg-white border border-gray-200 hover:bg-gray-100"}`}>Buka di Panel</button>
+      </div>
+      <div className="space-y-2">
+        {tasks.length === 0 && <p className="text-[11px] opacity-70 italic">Belum ada tugas.</p>}
+        {tasks.map(task => {
+          const currentList = lists.find(l => l.id === task.list_id);
+          const isDone = currentList?.title?.toLowerCase().includes("done");
+          return (
+            <div key={task.id} className={`p-2 rounded-lg text-[12px] flex flex-col gap-1.5 ${isMe ? "bg-white/10" : "bg-white border text-gray-700"}`}>
+              <div className="flex items-start justify-between gap-2">
+                <span className={`font-medium leading-tight ${isDone ? "line-through opacity-60" : ""}`}>{task.title}</span>
+              </div>
+              <div className="flex items-center justify-between mt-1">
+                <span className={`text-[9px] px-1.5 py-0.5 rounded font-bold tracking-wider uppercase ${isDone ? "bg-green-500/20 text-white-500" : isMe ? "bg-white/20 text-white" : "bg-gray-100 text-gray-500"}`}>
+                  {currentList?.title || "Unknown"}
+                </span>
+
+                {hasEditAccess ? (
+                  <select
+                    title="Pindahkan status"
+                    className={`text-[10px] bg-transparent border-none outline-none cursor-pointer font-bold ${isMe ? "text-white opacity-80" : "text-gray-500"}`}
+                    value={task.list_id}
+                    onChange={(e) => handleMoveTask(task.id, e.target.value)}
+                  >
+                    {lists.map(l => (
+                      <option key={l.id} value={l.id} className="text-gray-800 bg-white">{l.title}</option>
+                    ))}
+                  </select>
+                ) : (
+                  <span className={`text-[10px] cursor-not-allowed font-bold opacity-60 ${isMe ? "text-white" : "text-gray-500"}`} title="Hanya admin/lead yang bisa mengubah status">
+                    {lists.find(l => l.id === task.list_id)?.title || ""}
+                  </span>
+                )}
+              </div>
+            </div>
+          )
+        })}
+      </div>
+    </div>
+  )
+}
+
+import { DragDropContext, Droppable, Draggable } from "@hello-pangea/dnd";
+import { moveCard, createCard, updateMemberRole } from "../../boards/[id]/actions";
+import { SwitchCamera } from "lucide-react";
+
+function MiniBoardPanel({ boardId, supabase, onClose, hasEditAccess, participants }: { boardId: string, supabase: any, onClose: () => void, hasEditAccess: boolean, participants: any[] }) {
+  const [boardInfo, setBoardInfo] = useState<any>(null);
+  const [lists, setLists] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [boardMembers, setBoardMembers] = useState<any[]>([]);
+  const [isMembersModalOpen, setIsMembersModalOpen] = useState(false);
+  const [isAddingTaskToList, setIsAddingTaskToList] = useState<string | null>(null);
+  const [newTaskTitle, setNewTaskTitle] = useState("");
+
+  const fetchData = async () => {
+    setLoading(true);
+    const { data: bData } = await supabase.from("boards").select("*").eq("id", boardId).single();
+    if (bData) setBoardInfo(bData);
+
+    const { data: listsData } = await supabase
+      .from("board_lists")
+      .select("id, title, position, board_cards(id, title, position, labels)")
+      .eq("board_id", boardId)
+      .order("position");
+
+    if (listsData) {
+      const sorted = listsData.map((l: any) => ({
+        ...l,
+        board_cards: l.board_cards.sort((a: any, b: any) => a.position - b.position)
+      }));
+      setLists(sorted);
+    }
+
+    const { data: membersData } = await supabase
+      .from("board_members")
+      .select("user_id, role, profiles(full_name, avatar_url)")
+      .eq("board_id", boardId);
+    if (membersData) setBoardMembers(membersData);
+
+    setLoading(false);
+  };
+
+  useEffect(() => {
+    fetchData();
+  }, [boardId]);
+
+  const handleDragEnd = async (result: any) => {
+    if (!hasEditAccess) return;
+    const { destination, source, draggableId } = result;
+
+    if (!destination) return;
+    if (destination.droppableId === source.droppableId && destination.index === source.index) return;
+
+    const newLists = Array.from(lists);
+    const sourceList = newLists.find(l => l.id === source.droppableId);
+    const destList = newLists.find(l => l.id === destination.droppableId);
+
+    if (!sourceList || !destList) return;
+
+    if (source.droppableId === destination.droppableId) {
+      const clonedCards = Array.from(sourceList.board_cards) as any[];
+      const [movedCard] = clonedCards.splice(source.index, 1);
+      clonedCards.splice(destination.index, 0, movedCard);
+
+      const newClonedCards = clonedCards.map((c, idx) => ({ ...c, position: idx }));
+      setLists(newLists.map(l => l.id === source.droppableId ? { ...l, board_cards: newClonedCards } : l));
+      await moveCard(draggableId, destination.droppableId, destination.index);
+    } else {
+      const sourceCards = Array.from(sourceList.board_cards) as any[];
+      const destCards = Array.from(destList.board_cards) as any[];
+
+      const [movedCard] = sourceCards.splice(source.index, 1);
+      destCards.splice(destination.index, 0, movedCard);
+
+      const newSourceCards = sourceCards.map((c, idx) => ({ ...c, position: idx }));
+      const newDestCards = destCards.map((c, idx) => ({ ...c, position: idx }));
+
+      setLists(newLists.map(l => {
+        if (l.id === source.droppableId) return { ...l, board_cards: newSourceCards };
+        if (l.id === destination.droppableId) return { ...l, board_cards: newDestCards };
+        return l;
+      }));
+      await moveCard(draggableId, destination.droppableId, destination.index);
+    }
+  };
+
+  const handleAddTask = async (listId: string) => {
+    if (!newTaskTitle.trim()) {
+      setIsAddingTaskToList(null);
+      return;
+    }
+    const relevantList = lists.find(l => l.id === listId);
+    const newPos = relevantList ? relevantList.board_cards.length : 0;
+
+    // Optimistic UI can be complex here so we just rely on refetch for add
+    const result = await createCard(listId, newTaskTitle, "", newPos);
+    if (result.data) {
+      await fetchData();
+    }
+    setNewTaskTitle("");
+    setIsAddingTaskToList(null);
+  };
+
+  const handleRoleToggle = async (memberUserId: string, newRole: string) => {
+    if (!hasEditAccess) return;
+
+    // Optimistic Update
+    setBoardMembers(prev => {
+      const exists = prev.find(m => m.user_id === memberUserId);
+      if (exists) return prev.map(m => m.user_id === memberUserId ? { ...m, role: newRole } : m);
+      return [...prev, { user_id: memberUserId, role: newRole }]; // insert optimistic
+    });
+
+    const result = await updateMemberRole(boardId, memberUserId, newRole);
+    if (!result.success) {
+      await fetchData();
+    }
+  };
+
+  if (loading) return <div className="p-8 text-center text-gray-500 flex flex-col items-center"><div className="w-8 h-8 rounded-full border-2 border-t-blue-500 animate-spin mb-4" /> Memuat Mini Board...</div>;
+
+  return (
+    <div className="flex flex-col h-full bg-[#fbfcff] relative">
+      <div className="p-4 border-b border-gray-100 flex items-center justify-between bg-white shrink-0">
+        <div>
+          <h3 className="font-bold text-[15px] text-gray-900 flex items-center gap-1.5"><Layout size={16} className="text-green-500" /> {boardInfo?.title}</h3>
+          <p className="text-[11px] text-gray-500 flex items-center gap-2">Live Sync Board &bull; {hasEditAccess ? <span className="text-green-600 font-bold">Editor</span> : <span className="text-gray-400">Viewer</span>} &bull; <button onClick={() => setIsMembersModalOpen(true)} className="hover:underline hover:text-blue-500 text-blue-400 font-medium">Atur Akses</button></p>
+        </div>
+        <button onClick={onClose} className="p-1.5 hover:bg-gray-100 rounded-full text-gray-400 hover:text-gray-800 transition-colors"><X size={16} /></button>
+      </div>
+
+      {isMembersModalOpen && (
+        <div className="absolute inset-0 bg-white z-50 flex flex-col shadow-[-4px_0_20px_rgba(0,0,0,0.02)]">
+          <div className="p-4 border-b border-gray-100 flex items-center justify-between shrink-0 bg-gray-50">
+            <h4 className="font-bold text-gray-900 text-[14px]">Akses Anggota Project</h4>
+            <button onClick={() => setIsMembersModalOpen(false)} className="text-gray-400 hover:text-gray-900"><X size={16} /></button>
+          </div>
+          <div className="flex-1 overflow-y-auto p-4 space-y-3">
+            {participants.map(participant => {
+              const boardMemberRef = boardMembers.find(m => m.user_id === participant.id);
+              const currentRole = boardMemberRef?.role || 'member';
+
+              return (
+                <div key={participant.id} className="flex items-center justify-between p-3 border border-gray-100 rounded-xl bg-white shadow-sm">
+                  <div className="flex items-center gap-3">
+                    <div className="w-8 h-8 rounded-full border border-gray-100 bg-gradient-to-br from-blue-50 to-indigo-50 flex items-center justify-center overflow-hidden">
+                      {participant.avatar ? (
+                        <img src={participant.avatar} alt="avatar" className="w-full h-full object-cover" />
+                      ) : (
+                        <span className="text-[12px] font-bold text-indigo-500">{participant.name?.charAt(0) || "U"}</span>
+                      )}
+                    </div>
+                    <div className="flex flex-col">
+                      <span className="text-[13px] font-bold text-gray-800 leading-tight">{participant.name || "Unknown"}</span>
+                      <span className="text-[11px] text-gray-500 capitalize">{currentRole === 'admin' ? 'Editor / Lead' : 'Viewer'}</span>
+                    </div>
+                  </div>
+
+                  {hasEditAccess ? (
+                    <select
+                      value={currentRole}
+                      onChange={(e) => handleRoleToggle(participant.id, e.target.value)}
+                      className={`text-[11px] font-bold px-2 py-1.5 rounded-lg border outline-none cursor-pointer ${currentRole === 'admin' ? 'bg-green-50 text-green-700 border-green-200' : 'bg-gray-50 text-gray-600 border-gray-200'}`}
+                    >
+                      <option value="admin">Editor</option>
+                      <option value="member">Viewer</option>
+                    </select>
+                  ) : (
+                    <span className={`text-[10px] font-bold px-2 py-1 rounded-lg ${currentRole === 'admin' ? 'bg-green-50 text-green-600' : 'bg-gray-100 text-gray-500'}`}>
+                      {currentRole === 'admin' ? 'Editor' : 'Viewer'}
+                    </span>
+                  )}
+                </div>
+              )
+            })}
+          </div>
+        </div>
+      )}
+      <div className="flex-1 overflow-y-auto p-4 space-y-5 custom-scrollbar">
+        <DragDropContext onDragEnd={handleDragEnd}>
+          {lists.map(list => (
+            <div key={list.id} className="bg-gray-50 rounded-xl border border-gray-200/60 p-3 shadow-sm flex flex-col max-h-[500px]">
+              <h4 className="text-[12px] font-bold text-gray-700 mb-3 flex justify-between items-center uppercase tracking-wider shrink-0">
+                {list.title} <span className="text-[10px] bg-white px-2 py-0.5 rounded-full border">{list.board_cards.length}</span>
+              </h4>
+
+              <Droppable droppableId={list.id} isDropDisabled={!hasEditAccess}>
+                {(provided, snapshot) => (
+                  <div
+                    {...provided.droppableProps}
+                    ref={provided.innerRef}
+                    className={`space-y-2 flex-1 overflow-y-auto min-h-[50px] p-1 -mx-1 ${snapshot.isDraggingOver ? "bg-gray-100/50 rounded-lg" : ""}`}
+                  >
+                    {list.board_cards.length === 0 && !snapshot.isDraggingOver && <p className="text-[11px] text-center text-gray-400 italic py-2">Kosong</p>}
+                    {list.board_cards.map((card: any, index: number) => (
+                      <Draggable key={card.id} draggableId={card.id} index={index} isDragDisabled={!hasEditAccess}>
+                        {(provided, snapshot) => (
+                          <div
+                            ref={provided.innerRef}
+                            {...provided.draggableProps}
+                            {...provided.dragHandleProps}
+                            className={`bg-white p-2.5 rounded-lg border border-gray-100 shadow-[0_1px_3px_rgba(0,0,0,0.02)] ${snapshot.isDragging ? "shadow-lg scale-[1.02] rotate-1 z-50 border-blue-200" : ""} ${!hasEditAccess ? "cursor-default" : ""}`}
+                          >
+                            <p className="text-[13px] font-medium text-gray-800 leading-snug">{card.title}</p>
+                          </div>
+                        )}
+                      </Draggable>
+                    ))}
+                    {provided.placeholder}
+                  </div>
+                )}
+              </Droppable>
+
+              {hasEditAccess && (
+                <div className="mt-2 pt-2 border-t border-gray-200/50 shrink-0">
+                  {isAddingTaskToList === list.id ? (
+                    <div className="space-y-2">
+                      <input
+                        type="text"
+                        autoFocus
+                        className="w-full text-[13px] p-2 bg-white border border-blue-200 rounded-md outline-none focus:ring-2 focus:ring-blue-100"
+                        placeholder="Nama tugas..."
+                        value={newTaskTitle}
+                        onChange={(e) => setNewTaskTitle(e.target.value)}
+                        onKeyDown={(e) => {
+                          if (e.key === "Enter") handleAddTask(list.id);
+                          if (e.key === "Escape") setIsAddingTaskToList(null);
+                        }}
+                      />
+                      <div className="flex gap-2">
+                        <button onClick={() => handleAddTask(list.id)} className="bg-blue-600 text-white text-[11px] px-3 py-1.5 rounded-md font-bold">Simpan</button>
+                        <button onClick={() => setIsAddingTaskToList(null)} className="bg-gray-200 text-gray-700 text-[11px] px-3 py-1.5 rounded-md font-bold hover:bg-gray-300">Batal</button>
+                      </div>
+                    </div>
+                  ) : (
+                    <button
+                      onClick={() => {
+                        setIsAddingTaskToList(list.id);
+                        setNewTaskTitle("");
+                      }}
+                      className="w-full text-left text-[12px] font-medium text-gray-500 hover:text-gray-800 hover:bg-gray-100 p-1.5 rounded-md transition-colors flex items-center gap-1.5 cursor-pointer"
+                    >
+                      <Plus size={14} /> Tambah Tugas
+                    </button>
+                  )}
+                </div>
+              )}
+            </div>
+          ))}
+        </DragDropContext>
+      </div>
+    </div>
+  )
+}
 import Link from "next/link";
 import { formatDistanceToNow } from "date-fns";
 
@@ -39,6 +386,7 @@ interface Message {
   isMe: boolean;
   attachment_type?: string | null;
   attachment_id?: string | null;
+  reaction?: string;
 }
 
 export default function StudyGroupRoom() {
@@ -57,20 +405,42 @@ export default function StudyGroupRoom() {
 
   const [notes, setNotes] = useState<any[]>([]);
   const [boards, setBoards] = useState<any[]>([]);
+  const [userRole, setUserRole] = useState("member");
   const [isLoading, setIsLoading] = useState(true);
+  const [activeBoardId, setActiveBoardId] = useState<string | null>(null);
 
   // Modals
   const [isAttachNoteModalOpen, setIsAttachNoteModalOpen] = useState(false);
   const [isAttachBoardModalOpen, setIsAttachBoardModalOpen] = useState(false);
+  const [isSettingsModalOpen, setIsSettingsModalOpen] = useState(false);
   const [viewingNote, setViewingNote] = useState<{
     title: string;
     content: string;
     author: string;
   } | null>(null);
   const [isLoadingNote, setIsLoadingNote] = useState(false);
+  const [isSummarizing, setIsSummarizing] = useState(false);
+  const [summaryResult, setSummaryResult] = useState<string | null>(null);
 
   // Supabase
   const supabase = createClient();
+
+  const handleSummarize = async () => {
+    if (messages.length === 0) return alert("Belum ada obrolan untuk dirangkum.");
+    setIsSummarizing(true);
+
+    // Format text
+    const textToSummarize = messages.map(m => `[${m.time}] ${m.sender}: ${m.text}`).join('\n');
+
+    const result = await summarizeStudyGroup(textToSummarize);
+    setIsSummarizing(false);
+
+    if (result.success && result.summary) {
+      setSummaryResult(result.summary);
+    } else {
+      alert(result.error);
+    }
+  };
 
   useEffect(() => {
     // Auto-scroll to bottom of chat
@@ -96,18 +466,25 @@ export default function StudyGroupRoom() {
           .select(
             `
                         user_id,
-                        profiles ( full_name )
+                        role,
+                        profiles ( full_name, avatar_url )
                     `,
           )
           .eq("group_id", groupId);
 
         if (memberData) {
-          const formattedMembers = memberData.map((m: any) => ({
-            id: m.user_id,
-            name: m.profiles?.full_name || "Unknown",
-            avatar: (m.profiles?.full_name || "?").charAt(0),
-            isOnline: true,
-          }));
+          const formattedMembers = memberData.map((m: any) => {
+            if (m.user_id === currentUserId) {
+              setUserRole(m.role || "member");
+            }
+            return {
+              id: m.user_id,
+              name: m.profiles?.full_name || "Unknown",
+              avatar: m.profiles?.avatar_url,
+              isOnline: true,
+              role: m.role
+            };
+          });
           setParticipants(formattedMembers);
         }
 
@@ -282,6 +659,16 @@ export default function StudyGroupRoom() {
     }
   };
 
+  const handleReact = (msgId: string, emoji: string) => {
+    setMessages((prev) =>
+      prev.map((m) =>
+        m.id === msgId
+          ? { ...m, reaction: m.reaction === emoji ? undefined : emoji }
+          : m
+      )
+    );
+  };
+
   return (
     <div className="flex-1 flex flex-col h-screen bg-[#fbfcff] overflow-hidden">
       {/* --- HEADER --- */}
@@ -308,16 +695,31 @@ export default function StudyGroupRoom() {
                 </span>
               </h1>
               <p className="text-[13px] text-gray-500 font-medium">
-                {participants.length} Anggota •{" "}
-                {participants.filter((p) => p.isOnline).length} Online
+                {participants.length} Anggota
               </p>
             </div>
           </div>
         </div>
 
         <div className="flex items-center gap-2">
-          <div className="w-px h-6 bg-gray-200 mx-2"></div>
-          <button className="w-10 h-10 rounded-xl bg-gray-50 flex items-center justify-center text-gray-600 hover:bg-gray-100 transition-colors">
+          <button
+            onClick={handleSummarize}
+            disabled={isSummarizing || messages.length === 0}
+            className="flex items-center gap-2 px-4 py-2.5 bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-white text-[13px] font-bold rounded-xl shadow-[0_2px_10px_rgba(245,158,11,0.3)] transition-all cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed group"
+          >
+            {isSummarizing ? (
+              <div className="w-4 h-4 border-2 border-white/80 rounded-full border-t-transparent animate-spin"></div>
+            ) : (
+              <Sparkles size={16} className="text-amber-100 group-hover:text-white transition-colors" />
+            )}
+            Rangkum Diskusi
+          </button>
+
+          <div className="w-px h-6 bg-gray-200 mx-1"></div>
+          <button
+            onClick={() => setIsSettingsModalOpen(true)}
+            className="w-10 h-10 rounded-xl bg-gray-50 flex items-center justify-center text-gray-600 hover:bg-gray-100 transition-colors cursor-pointer"
+          >
             <Settings size={20} />
           </button>
         </div>
@@ -350,10 +752,10 @@ export default function StudyGroupRoom() {
             {messages.map((msg) => (
               <div
                 key={msg.id}
-                className={`flex max-w-[80%] ${msg.isMe ? "ml-auto justify-end" : "mr-auto justify-start"}`}
+                className={`flex max-w-[80%] group ${msg.isMe ? "ml-auto justify-end" : "mr-auto justify-start"}`}
               >
                 <div
-                  className={`flex gap-3 ${msg.isMe ? "flex-row-reverse" : "flex-row"}`}
+                  className={`flex gap-3 relative ${msg.isMe ? "flex-row-reverse" : "flex-row"}`}
                 >
                   {/* Avatar */}
                   <div
@@ -364,7 +766,7 @@ export default function StudyGroupRoom() {
 
                   {/* Bubble */}
                   <div
-                    className={`flex flex-col ${msg.isMe ? "items-end" : "items-start"}`}
+                    className={`flex flex-col relative ${msg.isMe ? "items-end" : "items-start"}`}
                   >
                     <div className="flex items-baseline gap-2 mb-1">
                       <span className="text-[13px] font-bold text-gray-700">
@@ -375,7 +777,7 @@ export default function StudyGroupRoom() {
                       </span>
                     </div>
                     <div
-                      className={`p-4 rounded-2xl text-[14px] leading-relaxed shadow-sm ${msg.isMe ? "bg-[#38bcfc] text-white rounded-tr-sm" : "bg-white border border-gray-100 text-gray-800 rounded-tl-sm"}`}
+                      className={`relative p-4 rounded-2xl text-[14px] leading-relaxed shadow-sm ${msg.isMe ? "bg-[#38bcfc] text-white rounded-tr-sm" : "bg-white border border-gray-100 text-gray-800 rounded-tl-sm"}`}
                     >
                       {msg.text}
                       {msg.attachment_type === "note" && msg.attachment_id && (
@@ -403,14 +805,52 @@ export default function StudyGroupRoom() {
                           <Eye size={14} /> Lihat Isi Catatan
                         </button>
                       )}
-                      {msg.attachment_type === "board" && (
-                        <Link
-                          href={`/dashboard/boards/${msg.attachment_id}`}
-                          className={`mt-2 flex items-center gap-2 ${msg.isMe ? "bg-white/20 hover:bg-white/30" : "bg-[#1a1c20] hover:bg-[#2a2c30]"} font-medium px-3 py-2 rounded-lg text-[12px] text-white transition-colors cursor-pointer w-fit`}
-                        >
-                          <FolderOpen size={14} /> Buka Project Board Ini
-                        </Link>
+                      {msg.attachment_type === "board" && msg.attachment_id && (
+                        <BoardWidget
+                          boardId={msg.attachment_id}
+                          supabase={supabase}
+                          isMe={msg.isMe}
+                          hasEditAccess={userRole === "admin"}
+                          onOpenBoard={(id) => setActiveBoardId(id)}
+                        />
                       )}
+
+                      {/* Reaction Display */}
+                      {msg.reaction && (
+                        <div
+                          className={`absolute -bottom-3 ${msg.isMe ? "right-2" : "left-2"} bg-white border border-gray-100 shadow-[0_2px_8px_rgba(0,0,0,0.08)] rounded-full px-1.5 py-0.5 text-[14px] z-10 cursor-pointer hover:scale-110 transition-transform`}
+                          onClick={() => handleReact(msg.id, msg.reaction!)}
+                        >
+                          {msg.reaction}
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Reaction Picker (Hover) */}
+                    <div
+                      className={`absolute top-6 ${msg.isMe ? "-left-[85px]" : "-right-[85px]"} opacity-0 group-hover:opacity-100 transition-opacity bg-white border border-gray-100 rounded-full shadow-sm p-1 flex gap-1 z-20`}
+                    >
+                      <button
+                        onClick={() => handleReact(msg.id, "👍")}
+                        className="hover:scale-125 transition-transform text-[16px] cursor-pointer"
+                        title="Thumb Up"
+                      >
+                        👍
+                      </button>
+                      <button
+                        onClick={() => handleReact(msg.id, "❤️")}
+                        className="hover:scale-125 transition-transform text-[16px] cursor-pointer"
+                        title="Love"
+                      >
+                        ❤️
+                      </button>
+                      <button
+                        onClick={() => handleReact(msg.id, "😂")}
+                        className="hover:scale-125 transition-transform text-[16px] cursor-pointer"
+                        title="Haha"
+                      >
+                        😂
+                      </button>
                     </div>
                   </div>
                 </div>
@@ -446,100 +886,110 @@ export default function StudyGroupRoom() {
         </div>
 
         {/* --- RIGHT SIDEBAR: RESOURCES & INTEGRATION --- */}
-        <div className="w-[320px] bg-white border-l border-gray-100 hidden lg:flex flex-col shrink-0 z-10 shadow-[-4px_0_20px_rgba(0,0,0,0.02)]">
-          <div className="p-5 border-b border-gray-100">
-            <h2 className="text-[16px] font-bold text-gray-900">
-              Resource Grup
-            </h2>
-            <p className="text-[12px] text-gray-500">
-              Integrasikan notes & project board.
-            </p>
-          </div>
-
-          <div className="flex-1 overflow-y-auto p-5 space-y-8">
-            {/* Notes Integration */}
-            <section>
-              <div className="flex items-center justify-between mb-3">
-                <h3 className="text-[14px] font-bold text-gray-800 flex items-center gap-2">
-                  <FileText size={16} className="text-blue-500" /> Notes
-                  Tersimpan
-                </h3>
-                <button
-                  onClick={() => setIsAttachNoteModalOpen(true)}
-                  className="w-6 h-6 rounded-full bg-blue-50 text-blue-600 flex items-center justify-center hover:bg-blue-100 transition-colors"
-                >
-                  <Plus size={14} />
-                </button>
-              </div>
-
-              <div className="bg-blue-50/50 rounded-xl p-4 border border-blue-100 border-dashed text-center">
-                <FileText size={24} className="text-blue-300 mx-auto mb-2" />
+        <div className="w-[320px] bg-white border-l border-gray-100 hidden lg:flex flex-col shrink-0 z-10 shadow-[-4px_0_20px_rgba(0,0,0,0.02)] transition-all">
+          {activeBoardId ? (
+            <MiniBoardPanel boardId={activeBoardId} supabase={supabase} onClose={() => setActiveBoardId(null)} hasEditAccess={userRole === "admin"} participants={participants} />
+          ) : (
+            <>
+              <div className="p-5 border-b border-gray-100">
+                <h2 className="text-[16px] font-bold text-gray-900">
+                  Resource Grup
+                </h2>
                 <p className="text-[12px] text-gray-500">
-                  Belum ada catatan yang dilampirkan dari AI Workspace.
+                  Integrasikan notes & project board.
                 </p>
-                <button
-                  onClick={() => setIsAttachNoteModalOpen(true)}
-                  className="mt-3 text-[12px] font-bold text-blue-600 hover:underline"
-                >
-                  Lampirkan Notes
-                </button>
-              </div>
-            </section>
-
-            {/* Boards Integration */}
-            <section>
-              <div className="flex items-center justify-between mb-3">
-                <h3 className="text-[14px] font-bold text-gray-800 flex items-center gap-2">
-                  <FolderOpen size={16} className="text-green-500" /> Project
-                  Board Grup
-                </h3>
-                <button
-                  onClick={() => setIsAttachBoardModalOpen(true)}
-                  className="w-6 h-6 rounded-full bg-green-50 text-green-600 flex items-center justify-center hover:bg-green-100 transition-colors"
-                >
-                  <Plus size={14} />
-                </button>
               </div>
 
-              <div className="bg-green-50/50 rounded-xl p-4 border border-green-100 border-dashed text-center">
-                <FolderOpen size={24} className="text-green-300 mx-auto mb-2" />
-                <p className="text-[12px] text-gray-500">
-                  Grup ini belum terhubung dengan Kanban Board manapun.
-                </p>
-                <button
-                  onClick={() => setIsAttachBoardModalOpen(true)}
-                  className="mt-3 text-[12px] font-bold text-green-600 hover:underline"
-                >
-                  Hubungkan Board
-                </button>
-              </div>
-            </section>
-
-            {/* Online Members */}
-            <section>
-              <h3 className="text-[14px] font-bold text-gray-800 mb-3 flex items-center gap-2">
-                <Users size={16} className="text-[#38bcfc]" /> Anggota (
-                {participants.length})
-              </h3>
-              <div className="space-y-3">
-                {participants.map((p) => (
-                  <div key={p.id} className="flex items-center gap-3">
-                    <div className="relative">
-                      <div className="w-8 h-8 rounded-full bg-gray-100 border flex items-center justify-center font-bold text-[12px] text-gray-600">
-                        {p.avatar}
-                      </div>
-                      {p.isOnline && (
-                        <div className="absolute -bottom-0.5 -right-0.5 w-3 h-3 bg-green-500 border-2 border-white rounded-full"></div>
-                      )}
-                    </div>
-                    <span className="text-[13px] font-medium text-gray-700 line-clamp-1">
-                      {p.name}
-                    </span>
+              <div className="flex-1 overflow-y-auto p-5 space-y-8">
+                {/* Notes Integration */}
+                <section>
+                  <div className="flex items-center justify-between mb-3">
+                    <h3 className="text-[14px] font-bold text-gray-800 flex items-center gap-2">
+                      <FileText size={16} className="text-blue-500" /> Notes
+                      Tersimpan
+                    </h3>
+                    <button
+                      onClick={() => setIsAttachNoteModalOpen(true)}
+                      className="w-6 h-6 rounded-full bg-blue-50 text-blue-600 flex items-center justify-center hover:bg-blue-100 transition-colors cursor-pointer"
+                    >
+                      <Plus size={14} />
+                    </button>
                   </div>
-                ))}
+
+                  <div className="bg-blue-50/50 rounded-xl p-4 border border-blue-100 border-dashed text-center">
+                    <FileText size={24} className="text-blue-300 mx-auto mb-2" />
+                    <p className="text-[12px] text-gray-500">
+                      Belum ada catatan yang dilampirkan dari AI Workspace.
+                    </p>
+                    <button
+                      onClick={() => setIsAttachNoteModalOpen(true)}
+                      className="mt-3 text-[12px] font-bold text-blue-600 hover:underline cursor-pointer"
+                    >
+                      Lampirkan Notes
+                    </button>
+                  </div>
+                </section>
+
+                {/* Boards Integration */}
+                <section>
+                  <div className="flex items-center justify-between mb-3">
+                    <h3 className="text-[14px] font-bold text-gray-800 flex items-center gap-2">
+                      <FolderOpen size={16} className="text-green-500" /> Project
+                      Board Grup
+                    </h3>
+                    <button
+                      onClick={() => setIsAttachBoardModalOpen(true)}
+                      className="w-6 h-6 rounded-full bg-green-50 text-green-600 flex items-center justify-center hover:bg-green-100 transition-colors cursor-pointer"
+                    >
+                      <Plus size={14} />
+                    </button>
+                  </div>
+
+                  <div className="bg-green-50/50 rounded-xl p-4 border border-green-100 border-dashed text-center">
+                    <FolderOpen size={24} className="text-green-300 mx-auto mb-2" />
+                    <p className="text-[12px] text-gray-500">
+                      Grup ini belum terhubung dengan Kanban Board manapun.
+                    </p>
+                    <button
+                      onClick={() => setIsAttachBoardModalOpen(true)}
+                      className="mt-3 text-[12px] font-bold text-green-600 hover:underline"
+                    >
+                      Hubungkan Board
+                    </button>
+                  </div>
+                </section>
+
+                {/* Online Members */}
+                <section>
+                  <h3 className="text-[14px] font-bold text-gray-800 mb-3 flex items-center gap-2">
+                    <Users size={16} className="text-[#38bcfc]" /> Anggota (
+                    {participants.length})
+                  </h3>
+                  <div className="space-y-3">
+                    {participants.map((p) => (
+                      <div key={p.id} className="flex items-center gap-3">
+                        <div className="relative">
+                          <div className="w-8 h-8 rounded-full bg-gray-100 border overflow-hidden flex items-center justify-center font-bold text-[12px] text-gray-600">
+                            {p.avatar ? (
+                              <img src={p.avatar} alt={p.name} className="w-full h-full object-cover" />
+                            ) : (
+                              p.name?.charAt(0) || "U"
+                            )}
+                          </div>
+                          {p.isOnline && (
+                            <div className="absolute -bottom-0.5 -right-0.5 w-3 h-3 bg-green-500 border-2 border-white rounded-full z-10"></div>
+                          )}
+                        </div>
+                        <span className="text-[13px] font-medium text-gray-700 line-clamp-1">
+                          {p.name}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                </section>
               </div>
-            </section>
-          </div>
+            </>
+          )}
         </div>
       </div>
 
@@ -692,6 +1142,79 @@ export default function StudyGroupRoom() {
             <span className="text-[14px] font-medium text-gray-700">
               Memuat isi catatan...
             </span>
+          </div>
+        </div>
+      )}
+
+      {/* Settings Modal */}
+      {isSettingsModalOpen && (
+        <div className="fixed inset-0 bg-gray-900/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-[24px] shadow-2xl w-full max-w-[400px] overflow-hidden">
+            <div className="p-5 border-b border-gray-100 flex justify-between items-center">
+              <h2 className="text-[16px] font-bold text-gray-900 flex items-center gap-2">
+                Pengaturan Grup
+              </h2>
+              <button
+                onClick={() => setIsSettingsModalOpen(false)}
+                className="text-gray-400 hover:text-gray-900 transition-colors cursor-pointer"
+              >
+                <X size={20} />
+              </button>
+            </div>
+            <div className="p-6 space-y-5">
+              <div>
+                <label className="text-[13px] font-bold text-gray-700 mb-1.5 block">Nama Grup</label>
+                <div className="w-full bg-gray-50 border border-gray-200 text-gray-900 text-[14px] rounded-xl px-4 py-3 cursor-not-allowed text-gray-500 font-medium">
+                  {title}
+                </div>
+                <p className="text-[11px] text-gray-400 mt-1">Hanya admin yang bisa mengubah nama grup.</p>
+              </div>
+              <div>
+                <label className="text-[13px] font-bold text-gray-700 mb-1.5 block">Tipe Grup</label>
+                <div className="w-full bg-gray-50 border border-gray-200 text-gray-900 text-[14px] rounded-xl px-4 py-3 cursor-not-allowed text-gray-500 uppercase font-bold tracking-wider">
+                  {type}
+                </div>
+              </div>
+              <button
+                onClick={() => setIsSettingsModalOpen(false)}
+                className="w-full bg-[#1a1c20] hover:bg-[#2a2c30] text-white font-bold rounded-xl py-3.5 mt-2 transition-all shadow-md cursor-pointer"
+              >
+                Tutup
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Summary Modal */}
+      {summaryResult && (
+        <div className="fixed inset-0 bg-gray-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-[24px] shadow-2xl w-full max-w-[600px] max-h-[85vh] overflow-hidden flex flex-col">
+            <div className="p-5 border-b border-amber-100 flex justify-between items-center bg-gradient-to-r from-amber-50 to-orange-50 shrink-0">
+              <h2 className="text-[18px] font-bold text-amber-900 flex items-center gap-2">
+                <Sparkles size={20} className="text-amber-500" />
+                Ringkasan Diskusi AI
+              </h2>
+              <button
+                onClick={() => setSummaryResult(null)}
+                className="p-2 text-amber-900/50 hover:text-amber-900 rounded-full hover:bg-white/80 transition-colors"
+              >
+                <X size={20} />
+              </button>
+            </div>
+            <div className="flex-1 overflow-y-auto p-6 text-gray-800">
+              <div className="prose prose-sm prose-amber max-w-none prose-headings:text-amber-950 prose-a:text-orange-600 prose-strong:text-amber-900">
+                <ReactMarkdown>{summaryResult}</ReactMarkdown>
+              </div>
+            </div>
+            <div className="p-4 border-t border-gray-100 bg-gray-50 shrink-0 flex justify-end">
+              <button
+                onClick={() => setSummaryResult(null)}
+                className="px-5 py-2.5 rounded-xl bg-[#1a1c20] text-white text-[13px] font-bold hover:bg-[#2a2c30] transition-colors cursor-pointer"
+              >
+                Tutup
+              </button>
+            </div>
           </div>
         </div>
       )}

@@ -1,6 +1,8 @@
 "use server";
 
 import { createClient } from "@/utils/supabase/server";
+import { ChatGoogleGenerativeAI } from "@langchain/google-genai";
+import { HumanMessage } from "@langchain/core/messages";
 
 export async function createStudyGroup(title: string, description: string, subject: string, type: string) {
     const supabase = await createClient();
@@ -145,4 +147,60 @@ export async function getNoteContent(noteId: string) {
 
     if (error) return { error: error.message };
     return { data };
+}
+
+export async function summarizeStudyGroup(messagesText: string) {
+    try {
+        const apiKey = process.env.GOOGLE_AI_API_KEY;
+        if (!apiKey) {
+            throw new Error("API Key tidak ditemukan.");
+        }
+
+        const model = new ChatGoogleGenerativeAI({
+            model: "gemini-2.5-flash",
+            apiKey: apiKey,
+            maxOutputTokens: 2048,
+            temperature: 0.3,
+        });
+
+        const prompt = `Kamu adalah Asisten Belajar Edunai (AI) yang sangat cerdas. Tugas utamamu adalah merangkum diskusi grup belajar dengan sangat detail, komprehensif, dan menyeluruh.
+
+Tolong baca seluruh log percakapan di bawah ini dengan teliti.
+
+Instruksi Analisis:
+1. Buat ringkasan detail mengenai poin-poin materi atau topik utama yang dibahas. Jangan sampai ada informasi penting yang terlewat.
+2. Jabarkan masalah yang diangkat oleh anggota grup beserta solusi atau pemahaman yang didapat.
+3. Buatkan daftar kesimpulan dan daftar tugas (To-Do List) jika ada hal yang perlu diselesaikan setelah diskusi.
+4. Gunakan bahasa Indonesia yang interaktif, profesional, santai, dan rapi.
+5. Gunakan format Markdown (bold, italic, bullet points) dan emoji agar menarik dibaca.
+6. Pastikan penjelasanmu selesai dengan kalimat penutup yang menyemangati tim!
+
+Log Obrolan Grup:
+=============================
+${messagesText || "Belum ada diskusi yang tercatat."}
+=============================
+
+Silakan tulis ringkasan komprehensifmu sekarang:`;
+
+        const message = new HumanMessage({ content: prompt });
+        const response = await model.invoke([message]);
+
+        let finalSummary = "";
+        if (typeof response.content === "string") {
+            finalSummary = response.content;
+        } else if (Array.isArray(response.content)) {
+            finalSummary = response.content.map(c => typeof c === 'string' ? c : JSON.stringify(c)).join(" ");
+        }
+
+        return {
+            success: true,
+            summary: finalSummary,
+        };
+    } catch (error: any) {
+        console.error("AI Summarizer Error:", error);
+        return {
+            success: false,
+            error: error.message || "Gagal membuat ringkasan dengan AI",
+        };
+    }
 }

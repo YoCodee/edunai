@@ -26,6 +26,7 @@ import {
   Unlock,
   X,
   Trash2,
+  Monitor,
 } from "lucide-react";
 import { useState, useEffect } from "react";
 import { createClient } from "@/utils/supabase/client";
@@ -113,48 +114,7 @@ const yourGroups = [
   },
 ];
 
-const leaderboard = [
-  {
-    rank: 1,
-    name: "Jessica T.",
-    hours: 42,
-    points: 2450,
-    trend: "up",
-    initial: "J",
-  },
-  {
-    rank: 2,
-    name: "Michael R.",
-    hours: 38,
-    points: 2120,
-    trend: "up",
-    initial: "M",
-  },
-  {
-    rank: 3,
-    name: "Amanda W.",
-    hours: 35,
-    points: 1980,
-    trend: "down",
-    initial: "A",
-  },
-  {
-    rank: 4,
-    name: "Budi S.",
-    hours: 31,
-    points: 1850,
-    trend: "up",
-    initial: "B",
-  },
-  {
-    rank: 5,
-    name: "Nicho P.",
-    hours: 28,
-    points: 1640,
-    trend: "up",
-    initial: "N",
-  },
-];
+
 
 const exploreGroupsDummy = [
   {
@@ -195,6 +155,7 @@ export default function StudyGroupPage() {
   const [newTitle, setNewTitle] = useState("");
   const [newDesc, setNewDesc] = useState("");
   const [newSubject, setNewSubject] = useState("");
+  const [newIcon, setNewIcon] = useState("general");
   const [newType, setNewType] = useState("private");
 
   const [isExploreModalOpen, setIsExploreModalOpen] = useState(false);
@@ -210,79 +171,113 @@ export default function StudyGroupPage() {
 
   const fetchBoardsAndNotes = async () => {
     setIsLoadingData(true);
-    const {
-      data: { user },
-    } = await supabase.auth.getUser();
-    setCurrentUserId(user?.id || null);
+    try {
+      const {
+        data: { user },
+        error: authError,
+      } = await supabase.auth.getUser();
+      setCurrentUserId(user?.id || null);
 
-    if (user) {
-      const { data: boardData, error: boardError } = await supabase
-        .from("study_group_members")
-        .select(
-          `
-          group_id,
-          role,
-          study_groups ( id, title, description, join_code, created_at, group_type )
-        `,
-        )
-        .eq("user_id", user.id);
-
-      if (!boardError && boardData) {
-        const mappedBoards = boardData.map((item: any) => ({
-          ...item.study_groups,
-          userRole: item.role,
-        }));
-        setBoards(mappedBoards);
+      if (authError) {
+        console.error("Auth error:", authError);
       }
 
-      const { data: notesData, error: notesError } = await supabase
-        .from("notes")
-        .select("id, title, created_at")
-        .order("created_at", { ascending: false })
-        .limit(5);
+      if (user) {
+        const { data: boardData, error: boardError } = await supabase
+          .from("study_group_members")
+          .select(
+            `
+            group_id,
+            role,
+            study_groups ( id, title, description, join_code, created_at, group_type )
+          `,
+          )
+          .eq("user_id", user.id);
 
-      if (!notesError && notesData) setNotes(notesData);
+        if (boardError) console.error("Board error:", boardError);
+        if (!boardError && boardData) {
+          const mappedBoards = boardData
+            .map((item: any) => ({
+              ...item.study_groups,
+              userRole: item.role,
+            }))
+            .sort(
+              (a: any, b: any) =>
+                new Date(b.created_at).getTime() -
+                new Date(a.created_at).getTime(),
+            );
+          setBoards(mappedBoards);
+        }
 
-      // --- DYNAMIC LEADERBOARD CALCULATION ---
-      // We'll calculate points based on contributions: Notes (100pt each), Events/Schedule (50pt each)
-      const { data: profilesData } = await supabase
-        .from("profiles")
-        .select(
-          `
-          id, 
-          full_name, 
-          notes (id),
-          events (id)
-        `,
-        )
-        .limit(10);
+        const { data: notesData, error: notesError } = await supabase
+          .from("notes")
+          .select("id, title, created_at")
+          .order("created_at", { ascending: false })
+          .limit(5);
 
-      if (profilesData) {
-        const calculated = profilesData
-          .map((p) => {
+        if (notesError) console.error("Notes error:", notesError);
+        if (!notesError && notesData) setNotes(notesData);
+
+        // --- DYNAMIC LEADERBOARD CALCULATION ---
+        const { data: profilesData, error: profilesError } = await supabase
+          .from("profiles")
+          .select(
+            `
+            id, 
+            full_name, 
+            notes (id),
+            events (id)
+          `,
+          )
+          .limit(10);
+        
+        if (profilesError) console.error("Profiles Error:", profilesError);
+
+        if (profilesData) {
+          const dummyLeaderboard = [
+            { name: "Jessica T.", initial: "J", hours: 42, points: 2450, trend: "up" },
+            { name: "Michael R.", initial: "M", hours: 38, points: 2120, trend: "up" },
+            { name: "Amanda W.", initial: "A", hours: 35, points: 1980, trend: "down" },
+            { name: "Budi S.", initial: "B", hours: 31, points: 1850, trend: "up" },
+            { name: "Reza A.", initial: "R", hours: 25, points: 1500, trend: "down" },
+            { name: "Tania S.", initial: "T", hours: 22, points: 1350, trend: "up" },
+            { name: "Alex M.", initial: "A", hours: 20, points: 1200, trend: "down" },
+            { name: "Sarah K.", initial: "S", hours: 18, points: 1100, trend: "up" },
+            { name: "David L.", initial: "D", hours: 15, points: 900, trend: "down" },
+            { name: "Kevin J.", initial: "K", hours: 12, points: 700, trend: "up" },
+          ];
+
+          const calculatedDB = profilesData.map((p) => {
             const notesCount = (p as any).notes?.length || 0;
             const eventsCount = (p as any).events?.length || 0;
-            const points = notesCount * 100 + eventsCount * 50;
-            const hours = Math.floor(points / 60) + 5; // Semantic dummy hours based on points
+            // Boost DB user points so they appear on top in demo
+            const points = notesCount * 100 + eventsCount * 50 + 2500;
+            const hours = Math.floor(points / 60) + 5;
 
             return {
               name: p.full_name || "Scholar",
               initial: (p.full_name || "S").charAt(0),
               points: points,
               hours: hours,
-              trend: points > 500 ? "up" : "down",
+              trend: points > 2500 ? "down" : "up",
             };
-          })
-          .sort((a, b) => b.points - a.points)
-          .slice(0, 5)
-          .map((player, idx) => ({ ...player, rank: idx + 1 }));
+          });
 
-        setDynamicLeaderboard(calculated);
+          const dbNames = calculatedDB.map((c) => c.name);
+          const remainingDummy = dummyLeaderboard.filter(
+            (d) => !dbNames.includes(d.name)
+          );
+
+          const fullLeaderboard = [...calculatedDB, ...remainingDummy]
+            .sort((a, b) => b.points - a.points)
+            .slice(0, 10)
+            .map((player, idx) => ({ ...player, rank: idx + 1 }));
+
+          setDynamicLeaderboard(fullLeaderboard);
+        }
       }
-    }
 
-    // Fetch ALL Public and Private Groups for Live Sessions/Explore (GLOBAL)
-    try {
+      // Fetch ALL Public and Private Groups for Live Sessions/Explore (GLOBAL)
       const { data: allGroupsData, error: allGroupsError } = await supabase
         .from("study_groups")
         .select(
@@ -299,10 +294,10 @@ export default function StudyGroupPage() {
         setAllGroups(allGroupsData);
       }
     } catch (err) {
-      console.error("Global fetch error:", err);
+      console.error("fetchBoardsAndNotes failed:", err);
+    } finally {
+      setIsLoadingData(false);
     }
-
-    setIsLoadingData(false);
   };
 
   useEffect(() => {
@@ -315,10 +310,12 @@ export default function StudyGroupPage() {
     if (!newTitle) return;
     setSubmitting(true);
 
+    const combinedSubject = `${newIcon}|${newSubject || "General"}`;
+
     const result = await createStudyGroup(
       newTitle,
       newDesc,
-      newSubject || "General",
+      combinedSubject,
       newType,
     );
     setSubmitting(false);
@@ -405,39 +402,56 @@ export default function StudyGroupPage() {
     }
   };
 
-  const getCardStyle = (subject: string) => {
-    const s = (subject || "").toLowerCase();
-    if (s.includes("math") || s.includes("matematika"))
+  const parseSubject = (sub: string) => {
+    if (!sub) return { icon: "general", text: "General" };
+    if (sub.includes("|")) {
+      const [icon, text] = sub.split("|");
+      return { icon, text };
+    }
+    return { icon: sub.toLowerCase(), text: sub };
+  };
+
+  const getCardStyle = (code: string) => {
+    const s = (code || "").toLowerCase();
+    if (s.includes("math") || s.includes("matematika") || s === "math")
       return {
-        icon: <Zap size={18} className="text-white" />,
-        color: "from-dash-primary to-brand-400",
-        bg: "bg-brand-50 text-brand-700",
+        icon: <Zap size={18} className="text-blue-500" />,
+        color: "bg-blue-50",
+        bg: "bg-blue-50 text-blue-600",
       };
-    if (s.includes("ekonomi") || s.includes("business"))
+    if (s.includes("ekonomi") || s.includes("business") || s === "ekonomi")
       return {
-        icon: <BookOpen size={18} className="text-white" />,
-        color: "from-[#1a1c20] to-gray-800",
-        bg: "bg-gray-100 text-gray-800",
+        icon: <BookOpen size={18} className="text-gray-600" />,
+        color: "bg-gray-100",
+        bg: "bg-gray-100 text-gray-700",
       };
-    if (s.includes("design") || s.includes("desain"))
+    if (s.includes("design") || s.includes("desain") || s === "design")
       return {
-        icon: <Sparkles size={18} className="text-white" />,
-        color: "from-gray-700 to-gray-500",
-        bg: "bg-gray-100 text-gray-600",
+        icon: <Sparkles size={18} className="text-purple-500" />,
+        color: "bg-purple-50",
+        bg: "bg-purple-50 text-purple-600",
+      };
+    if (s === "code" || s.includes("tech"))
+      return {
+        icon: <FolderOpen size={18} className="text-emerald-500" />,
+        color: "bg-emerald-50",
+        bg: "bg-emerald-50 text-emerald-600",
       };
     return {
-      icon: <Target size={18} className="text-white" />,
-      color: "from-[#38bcfc] to-blue-500",
-      bg: "bg-blue-50 text-blue-700",
+      icon: <Target size={18} className="text-[#38bcfc]" />,
+      color: "bg-sky-50",
+      bg: "bg-sky-50 text-[#38bcfc]",
     };
   };
+
+  const publicLiveSessions = allGroups.filter((g) => g.group_type === "public");
 
   return (
     <div className="flex-1 flex flex-col h-full bg-[#fbfcff] p-8 overflow-y-auto min-h-screen">
       {/* --- Top Header Context --- */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-10">
         <div className="flex items-center gap-4">
-          <div className="w-12 h-12 bg-linear-to-tr from-[#1a1c20] to-gray-800 rounded-2xl flex items-center justify-center shadow-lg shadow-gray-200">
+          <div className="w-12 h-12 bg-[#1a1c20] rounded-2xl flex items-center justify-center shadow-lg shadow-gray-200/50">
             <Users size={24} className="text-[#38bcfc]" />
           </div>
           <div>
@@ -500,26 +514,22 @@ export default function StudyGroupPage() {
                 <div className="col-span-1 md:col-span-2 py-8 flex justify-center">
                   <div className="w-8 h-8 rounded-full border-4 border-gray-200 border-t-[#38bcfc] animate-spin"></div>
                 </div>
-              ) : allGroups.length === 0 ? (
+              ) : publicLiveSessions.length === 0 ? (
                 <div className="col-span-1 md:col-span-2 text-center py-8 text-gray-500">
-                  <p>Belum ada sesi belajar live. Ayo buat grup baru!</p>
+                  <p>Belum ada sesi belajar live yang terbuka. Ayo buat grup publik baru!</p>
                 </div>
               ) : (
-                allGroups.slice(0, 6).map((group) => {
-                  const style = getCardStyle(group.subject);
+                publicLiveSessions.slice(0, 6).map((group) => {
+                  const parsed = parseSubject(group.subject);
+                  const style = getCardStyle(parsed.icon);
                   return (
                     <div
                       key={group.id}
-                      className="group relative bg-white rounded-2xl p-5 border border-gray-100 shadow-[0_4px_20px_rgba(0,0,0,0.03)] hover:shadow-[0_8px_30px_rgba(0,0,0,0.08)] transition-all duration-300 hover:-translate-y-1 cursor-pointer overflow-hidden"
+                      className="group flex flex-col bg-white rounded-2xl p-5 border border-gray-100 hover:border-blue-100 shadow-[0_2px_10px_rgba(0,0,0,0.02)] hover:shadow-[0_8px_30px_rgba(0,0,0,0.04)] transition-all duration-300"
                     >
-                      {/* Card Background Decoration */}
-                      <div
-                        className={`absolute top-0 right-0 w-32 h-32 bg-linear-to-br ${style.color} opacity-5 rounded-bl-full -mr-10 -mt-10 transition-transform group-hover:scale-110`}
-                      />
-
-                      <div className="flex justify-between items-start mb-4 relative z-10">
+                      <div className="flex justify-between items-start mb-4">
                         <div
-                          className={`w-10 h-10 rounded-xl bg-linear-to-br ${style.color} flex items-center justify-center shadow-sm`}
+                          className={`w-10 h-10 rounded-xl ${style.color} flex items-center justify-center`}
                         >
                           {style.icon}
                         </div>
@@ -531,9 +541,9 @@ export default function StudyGroupPage() {
                         </div>
                       </div>
 
-                      <div className="mb-4 relative z-10">
+                      <div className="mb-4">
                         <p className="text-[12px] font-semibold text-gray-400 mb-1 uppercase tracking-wider">
-                          {group.subject || "General"}
+                          {parsed.text}
                         </p>
                         <h3 className="text-[16px] font-bold text-gray-800 leading-snug group-hover:text-[#38bcfc] transition-colors line-clamp-2">
                           {group.title}
@@ -548,54 +558,46 @@ export default function StudyGroupPage() {
                         </span>
                       </div>
 
-                      <div className="border-t border-gray-50 pt-4 flex items-center justify-between mt-auto relative z-10">
+                      <div className="border-t border-gray-50 pt-4 flex items-center justify-between mt-auto mb-4">
                         <div className="flex items-center gap-2">
-                          <div className="w-6 h-6 rounded-full bg-gray-200 border-2 border-white flex items-center justify-center text-[10px] font-bold text-gray-600 shadow-sm uppercase">
+                          <div className="w-6 h-6 rounded-full bg-gray-100 border border-gray-200 flex items-center justify-center text-[10px] font-bold text-gray-500 uppercase">
                             {(group.profiles?.full_name || "?").charAt(0)}
                           </div>
                           <span className="text-[13px] font-medium text-gray-600 line-clamp-1">
                             {group.profiles?.full_name || "Unknown"}
                           </span>
                         </div>
-                        <div className="flex items-center gap-1.5 text-gray-500 bg-gray-50 px-2 py-1 rounded-lg border border-gray-100">
+                        <div className="flex items-center gap-1.5 text-gray-400">
                           <Users size={14} />
                         </div>
                       </div>
 
-                      {/* Hover Overlay Button */}
-                      <div className="absolute inset-0 bg-[#1a1c20]/0 group-hover:bg-[#1a1c20]/40 backdrop-blur-[2px] opacity-0 group-hover:opacity-100 transition-all duration-300 flex items-center justify-center z-20 rounded-2xl">
-                        {boards.some((b) => b.id === group.id) ? (
-                          <Link
-                            href={`/dashboard/study-group/${group.id}?title=${encodeURIComponent(group.title)}&type=${group.group_type || "private"}`}
-                            className="bg-[#38bcfc] text-white font-bold py-2.5 px-6 rounded-xl flex items-center gap-2 shadow-xl transform translate-y-4 group-hover:translate-y-0 transition-all duration-300 cursor-pointer hover:bg-[#2da0db]"
-                          >
-                            <Play size={16} className="fill-white" /> Masuk
-                            Kelas
-                          </Link>
-                        ) : (
-                          <button
-                            onClick={() =>
-                              handleJoinDemo(
-                                group.group_type,
-                                group.id,
-                                group.title,
-                              )
-                            }
-                            className="bg-white text-[#1a1c20] font-bold py-2.5 px-6 rounded-xl flex items-center gap-2 shadow-xl transform translate-y-4 group-hover:translate-y-0 transition-all duration-300 cursor-pointer hover:bg-gray-100"
-                          >
-                            {group.group_type === "public" ? (
-                              <>
-                                <Play size={16} className="fill-[#1a1c20]" />{" "}
-                                Gabung Sekarang
-                              </>
-                            ) : (
-                              <>
-                                <Lock size={16} /> Minta Akses
-                              </>
-                            )}
-                          </button>
-                        )}
-                      </div>
+                      {/* Clean Action Button */}
+                      {boards.some((b) => b.id === group.id) ? (
+                        <Link
+                          href={`/dashboard/study-group/${group.id}?title=${encodeURIComponent(group.title)}&type=${group.group_type || "private"}`}
+                          className="w-full text-center bg-gray-50 hover:bg-[#38bcfc] text-gray-700 hover:text-white font-bold py-2.5 px-4 rounded-xl flex items-center justify-center gap-2 transition-all duration-200 border border-gray-100 hover:border-transparent cursor-pointer"
+                        >
+                          <Play size={14} /> Masuk Kelas
+                        </Link>
+                      ) : (
+                        <button
+                          onClick={() =>
+                            handleJoinDemo(group.group_type, group.id, group.title)
+                          }
+                          className="w-full text-center bg-gray-50 hover:bg-gray-100 text-gray-700 font-bold py-2.5 px-4 rounded-xl flex items-center justify-center gap-2 transition-colors border border-gray-100 cursor-pointer"
+                        >
+                          {group.group_type === "public" ? (
+                            <>
+                              <Play size={14} /> Gabung Sekarang
+                            </>
+                          ) : (
+                            <>
+                              <Lock size={14} /> Minta Akses
+                            </>
+                          )}
+                        </button>
+                      )}
                     </div>
                   );
                 })
@@ -609,12 +611,7 @@ export default function StudyGroupPage() {
               <h2 className="text-[20px] font-bold text-gray-800">
                 Grup Belajar Kamu
               </h2>
-              <button
-                onClick={() => setIsExploreModalOpen(true)}
-                className="text-[14px] font-medium text-gray-500 hover:text-[#38bcfc] transition-colors group flex items-center gap-1.5 cursor-pointer"
-              >
-                <Search size={16} /> Eksplorasi Grup
-              </button>
+
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 gap-4">
@@ -629,7 +626,7 @@ export default function StudyGroupPage() {
                   </p>
                 </div>
               ) : (
-                boards.map((group) => (
+                boards.slice(0, 5).map((group) => (
                   <Link
                     key={group.id}
                     href={`/dashboard/study-group/${group.id}?title=${encodeURIComponent(group.title)}&type=${group.group_type || "private"}`}
@@ -703,43 +700,42 @@ export default function StudyGroupPage() {
             <h2 className="text-[20px] font-bold text-gray-800 mb-5">
               Materi & Catatan Terbaru
             </h2>
-            <div className="bg-white rounded-2xl border border-gray-100 shadow-[0_4px_12px_rgba(0,0,0,0.02)] overflow-hidden">
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-4">
               {isLoadingData ? (
-                <div className="py-8 flex justify-center">
+                <div className="col-span-full py-8 text-center flex justify-center w-full">
                   <div className="w-8 h-8 rounded-full border-4 border-gray-200 border-t-blue-500 animate-spin"></div>
                 </div>
               ) : notes.length === 0 ? (
-                <div className="text-center py-8 text-gray-500">
+                <div className="col-span-full text-center py-8 text-gray-500 bg-white rounded-2xl border border-gray-100 w-full">
                   <p>Belum ada catatan. Ayo buat di AI Workspace!</p>
                 </div>
               ) : (
-                notes.slice(0, 3).map((doc, i) => (
+                notes.map((doc, i) => (
                   <Link
                     href="/dashboard/ai-workspace"
                     key={doc.id}
-                    className="flex items-center justify-between p-4 border-b border-gray-50 hover:bg-gray-50/50 transition-colors last:border-0 cursor-pointer group/doc"
+                    className="flex flex-col p-4 bg-white rounded-2xl border border-gray-100 hover:border-blue-200 hover:shadow-[0_4px_12px_rgba(56,188,252,0.06)] transition-all cursor-pointer group/doc"
                   >
-                    <div className="flex items-center gap-4">
-                      <div className="w-10 h-10 bg-blue-50 text-blue-500 rounded-xl flex items-center justify-center group-hover/doc:bg-blue-100 transition-colors">
+                    <div className="flex items-start justify-between mb-3">
+                      <div className="w-10 h-10 bg-blue-50 text-blue-500 rounded-xl flex items-center justify-center group-hover/doc:bg-[#38bcfc] group-hover/doc:text-white transition-colors">
                         <FileText size={18} />
                       </div>
-                      <div>
-                        <h4 className="text-[14px] font-bold text-gray-800 group-hover/doc:text-[#38bcfc] transition-colors">
-                          {doc.title}
-                        </h4>
-                        <p className="text-[12px] text-gray-500 mt-0.5">
-                          Dibuat{" "}
-                          <span className="font-medium text-gray-600">
-                            {formatDistanceToNow(new Date(doc.created_at), {
-                              addSuffix: true,
-                            })}
-                          </span>
-                        </p>
-                      </div>
+                      <span className="text-[10px] font-bold tracking-wider uppercase bg-gray-50 text-gray-500 border border-gray-100 px-2 py-0.5 rounded-lg group-hover/doc:bg-blue-50 group-hover/doc:text-blue-500 transition-colors">
+                        Note
+                      </span>
                     </div>
-                    <span className="text-[11px] font-bold bg-gray-100 text-gray-500 px-2 py-1 rounded-md">
-                      Note
-                    </span>
+                    <div className="flex-1">
+                      <h4 className="text-[14px] font-bold text-gray-800 group-hover/doc:text-[#38bcfc] transition-colors line-clamp-2 leading-snug">
+                        {doc.title}
+                      </h4>
+                    </div>
+                    <div className="mt-4 pt-3 border-t border-gray-50 flex items-center justify-between">
+                      <p className="text-[11px] text-gray-500 font-medium">
+                        {formatDistanceToNow(new Date(doc.created_at), {
+                          addSuffix: true,
+                        })}
+                      </p>
+                    </div>
                   </Link>
                 ))
               )}
@@ -750,12 +746,10 @@ export default function StudyGroupPage() {
         {/* --- Right Sidebar Layout --- */}
         <div className="w-full lg:w-[320px] shrink-0 flex flex-col gap-6">
           {/* Productivity Leaderboard */}
-          <div className="bg-white rounded-3xl border border-gray-100 shadow-[0_8px_30px_rgba(0,0,0,0.04)] overflow-hidden relative">
-            <div className="absolute top-0 inset-x-0 h-1 bg-linear-to-r from-amber-400 via-brand-400 to-rose-400" />
-
-            <div className="p-6 pb-4">
+          <div className="bg-white rounded-3xl border border-gray-100 shadow-[0_4px_20px_rgba(0,0,0,0.03)] overflow-hidden">
+            <div className="p-6 pb-2">
               <div className="flex items-center gap-2 mb-1">
-                <Crown className="text-amber-500" size={20} />
+                <Crown className="text-[#38bcfc]" size={20} />
                 <h2 className="text-[18px] font-bold text-gray-900">
                   Top Scholars
                 </h2>
@@ -765,72 +759,117 @@ export default function StudyGroupPage() {
               </p>
             </div>
 
-            <div className="px-2 pb-4">
-              {dynamicLeaderboard.length === 0 ? (
-                <div className="py-8 text-center text-gray-400 text-[13px]">
-                  Memuat data pejuang...
-                </div>
-              ) : (
-                dynamicLeaderboard.map((user, idx) => (
-                  <div
-                    key={user.name}
-                    className="flex items-center justify-between p-3 hover:bg-gray-50 rounded-2xl transition-colors cursor-pointer group"
-                  >
-                    <div className="flex items-center gap-3">
-                      <div
-                        className={`w-6 text-center text-[14px] font-bold ${idx === 0 ? "text-amber-500" : idx === 1 ? "text-gray-400" : idx === 2 ? "text-brand-400" : "text-gray-300"}`}
-                      >
-                        #{user.rank}
-                      </div>
-                      <div className="relative">
-                        <div className="w-10 h-10 rounded-full bg-linear-to-tr from-blue-50 to-blue-100 border-2 border-white flex items-center justify-center font-bold text-[#38bcfc] shadow-sm uppercase">
-                          {user.initial}
+            {dynamicLeaderboard.length === 0 ? (
+              <div className="py-8 text-center text-gray-400 text-[13px]">
+                Memuat data pejuang...
+              </div>
+            ) : (
+              <div className="px-5 pt-4 pb-0">
+                <div className="flex items-end justify-center gap-2">
+                  {/* Rank 2 */}
+                  {dynamicLeaderboard[1] && (
+                    <div className="flex flex-col items-center w-1/3">
+                      <div className="relative mb-1">
+                        <div className="absolute inset-0 bg-orange-400/40 rounded-full blur animate-pulse" />
+                        <div className="w-10 h-10 rounded-full bg-gradient-to-br from-amber-300 to-orange-400 border-2 border-white shadow-md flex items-center justify-center font-bold text-white uppercase z-10 relative">
+                            {dynamicLeaderboard[1].initial}
                         </div>
-                        {idx === 0 && (
-                          <div className="absolute -top-1 -right-1 bg-amber-500 w-4 h-4 rounded-full border-2 border-white flex items-center justify-center">
-                            <Crown size={10} className="text-white" />
-                          </div>
-                        )}
                       </div>
-                      <div>
-                        <h4 className="text-[14px] font-bold text-gray-800 group-hover:text-[#38bcfc] transition-colors line-clamp-1">
-                          {user.name}
-                        </h4>
-                        <div className="flex items-center gap-1.5 text-[12px] text-gray-500">
-                          <Clock size={12} className="text-[#38bcfc]" />{" "}
-                          {user.hours} jam
-                        </div>
+                      <div className="mt-2 text-center text-[12px] font-bold text-gray-800 line-clamp-1 w-[90%]">{dynamicLeaderboard[1].name}</div>
+                      <div className="text-[10px] text-orange-500 font-bold mb-3">{dynamicLeaderboard[1].points} pt</div>
+                      <div className="w-full bg-gradient-to-b from-amber-50 to-white rounded-t-xl border-t border-x border-amber-200/50 flex items-start justify-center pt-2 shadow-[0_-4px_10px_rgba(245,158,11,0.15)]" style={{ height: '60px' }}>
+                          <span className="text-[14px] font-bold text-amber-500/60">#2</span>
                       </div>
                     </div>
+                  )}
 
-                    <div className="flex flex-col items-end">
-                      <span className="text-[13px] font-bold text-gray-700">
-                        {user.points} pt
-                      </span>
-                      {user.trend === "up" ? (
-                        <span className="flex items-center text-[10px] font-bold text-emerald-500">
-                          <ArrowUp size={10} /> 12
-                        </span>
-                      ) : (
-                        <span className="flex items-center text-[10px] font-bold text-red-500">
-                          <ArrowDown size={10} /> 4
-                        </span>
-                      )}
+                  {/* Rank 1 */}
+                  {dynamicLeaderboard[0] && (
+                    <div className="flex flex-col items-center w-1/3 z-10">
+                      <div className="relative mb-1">
+                        <Crown size={22} className="text-[#38bcfc] absolute -top-6 left-1/2 -translate-x-1/2 z-20 drop-shadow-sm" />
+                        <div className="w-12 h-12 rounded-full bg-gradient-to-br from-[#38bcfc] to-blue-500 border-2 border-white shadow-md flex items-center justify-center font-bold text-white uppercase z-10 relative">
+                            {dynamicLeaderboard[0].initial}
+                        </div>
+                      </div>
+                      <div className="mt-2 text-center text-[13px] font-bold text-gray-900 line-clamp-1 w-[95%]">{dynamicLeaderboard[0].name}</div>
+                      <div className="text-[11px] text-[#38bcfc] font-bold mb-3">{dynamicLeaderboard[0].points} pt</div>
+                      <div className="w-full bg-gradient-to-b from-blue-50 to-white rounded-t-xl border-t border-x border-blue-100 shadow-[0_-4px_10px_rgba(56,188,252,0.1)] flex items-start justify-center pt-2" style={{ height: '80px' }}>
+                          <span className="text-[18px] font-black text-[#38bcfc]/40">#1</span>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Rank 3 */}
+                  {dynamicLeaderboard[2] && (
+                    <div className="flex flex-col items-center w-1/3">
+                      <div className="relative">
+                        <div className="w-10 h-10 rounded-full bg-gray-50 text-gray-600 border-2 border-white shadow-sm flex items-center justify-center font-bold uppercase z-10 relative">
+                            {dynamicLeaderboard[2].initial}
+                        </div>
+                      </div>
+                      <div className="mt-2 text-center text-[12px] font-bold text-gray-800 line-clamp-1 w-[90%]">{dynamicLeaderboard[2].name}</div>
+                      <div className="text-[10px] text-gray-500 font-medium mb-3">{dynamicLeaderboard[2].points} pt</div>
+                      <div className="w-full bg-gray-50/60 rounded-t-xl border-t border-x border-gray-100/60 flex items-start justify-center pt-2 shadow-inner" style={{ height: '45px' }}>
+                          <span className="text-[13px] font-bold text-gray-300">#3</span>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
+          </div>
+
+          {/* Rank 4+ List */}
+          {dynamicLeaderboard.length > 3 && (
+            <div className="bg-white rounded-3xl border border-gray-100 shadow-[0_4px_20px_rgba(0,0,0,0.03)] overflow-hidden p-3">
+              {dynamicLeaderboard.slice(3).map((user) => (
+                <div
+                  key={user.name}
+                  className="flex items-center justify-between p-3 hover:bg-gray-50/80 rounded-2xl transition-colors cursor-pointer group"
+                >
+                  <div className="flex items-center gap-3">
+                    <div className="w-6 text-center text-[14px] font-bold text-gray-300">
+                      #{user.rank}
+                    </div>
+                    <div className="w-10 h-10 rounded-full bg-gray-50 border border-gray-100 flex items-center justify-center font-bold text-gray-500 uppercase">
+                      {user.initial}
+                    </div>
+                    <div>
+                      <h4 className="text-[14px] font-bold text-gray-800 group-hover:text-blue-600 transition-colors line-clamp-1">
+                        {user.name}
+                      </h4>
+                      <div className="flex items-center gap-1.5 text-[12px] text-gray-500">
+                        {user.hours} jam
+                      </div>
                     </div>
                   </div>
-                ))
-              )}
+                  <div className="flex flex-col items-end">
+                    <span className="text-[13px] font-bold text-gray-700">
+                      {user.points} pt
+                    </span>
+                    {user.trend === "up" ? (
+                      <span className="flex items-center text-[10px] font-bold text-emerald-500 mt-0.5">
+                        <ArrowUp size={10} /> 12
+                      </span>
+                    ) : (
+                      <span className="flex items-center text-[10px] font-bold text-red-500 mt-0.5">
+                        <ArrowDown size={10} /> 4
+                      </span>
+                    )}
+                  </div>
+                </div>
+              ))}
+              <div className="p-4 bg-white border-t border-gray-50 mt-2">
+                <button
+                  onClick={() => setIsLeaderboardModalOpen(true)}
+                  className="w-full py-2.5 rounded-xl text-[13px] font-bold text-gray-600 hover:text-[#38bcfc] hover:bg-gray-50 border border-gray-100 hover:border-gray-200 transition-all shadow-sm cursor-pointer"
+                >
+                  Lihat Selengkapnya
+                </button>
+              </div>
             </div>
-
-            <div className="p-4 bg-gray-50 border-t border-gray-100">
-              <button
-                onClick={() => setIsLeaderboardModalOpen(true)}
-                className="w-full py-2.5 rounded-xl text-[13px] font-bold text-gray-600 hover:text-[#38bcfc] hover:bg-white border border-transparent hover:border-gray-200 transition-all shadow-sm cursor-pointer"
-              >
-                Lihat Selengkapnya
-              </button>
-            </div>
-          </div>
+          )}
         </div>
       </div>
 
@@ -892,6 +931,30 @@ export default function StudyGroupPage() {
                   className="w-full bg-[#f8f9fc] border border-gray-200 text-gray-900 text-[14px] rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-[#38bcfc]/30 focus:border-[#38bcfc] transition-all font-medium"
                   placeholder="e.g. Desain Grafis, Matematika"
                 />
+              </div>
+
+              {/* Pilihan Logo Grup */}
+              <div className="space-y-1.5 pt-2">
+                <label className="text-[13px] font-bold text-gray-700 ml-1 mb-2 block">
+                  Pilihan Logo Grup
+                </label>
+                <div className="flex gap-3 justify-between sm:justify-start">
+                  {[
+                    { id: "general", icon: <Target size={22} className={newIcon === "general" ? "text-[#38bcfc]" : "text-gray-400 group-hover:text-gray-600"} /> },
+                    { id: "math", icon: <Zap size={22} className={newIcon === "math" ? "text-[#38bcfc]" : "text-gray-400 group-hover:text-gray-600"} /> },
+                    { id: "ekonomi", icon: <BookOpen size={22} className={newIcon === "ekonomi" ? "text-[#38bcfc]" : "text-gray-400 group-hover:text-gray-600"} /> },
+                    { id: "design", icon: <Sparkles size={22} className={newIcon === "design" ? "text-[#38bcfc]" : "text-gray-400 group-hover:text-gray-600"} /> },
+                    { id: "tech", icon: <Monitor size={22} className={newIcon === "tech" ? "text-[#38bcfc]" : "text-gray-400 group-hover:text-gray-600"} /> },
+                  ].map((item) => (
+                    <div
+                      key={item.id}
+                      onClick={() => setNewIcon(item.id)}
+                      className={`w-12 h-12 flex items-center justify-center rounded-xl cursor-pointer transition-all border-2 group ${newIcon === item.id ? "border-[#38bcfc] bg-blue-50/50 shadow-sm" : "border-gray-100 hover:border-gray-200 bg-white"}`}
+                    >
+                      {item.icon}
+                    </div>
+                  ))}
+                </div>
               </div>
 
               {/* Tipe Grup Radio */}
@@ -991,21 +1054,58 @@ export default function StudyGroupPage() {
                 />
                 <input
                   type="text"
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
                   placeholder="Ketik topik atau nama pelajaran..."
                   className="w-full pl-10 pr-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-[14px] focus:outline-none focus:ring-2 focus:ring-[#38bcfc]/30 focus:border-[#38bcfc] transition-all font-medium"
                 />
               </div>
 
               <div className="space-y-3">
-                {allGroups.filter((g) => !boards.some((b) => b.id === g.id))
-                  .length === 0 ? (
-                  <div className="py-8 text-center text-gray-500 text-[14px]">
-                    Tidak ada grup baru yang bisa dijelajahi.
-                  </div>
-                ) : (
-                  allGroups
-                    .filter((g) => !boards.some((b) => b.id === g.id))
-                    .map((group) => (
+                {(() => {
+                  const dummyExplores = [
+                    { id: "dummy-1", title: "Fisika Kuantum Dasar", subject: "general", group_type: "public", profiles: { full_name: "Albert E." } },
+                    { id: "dummy-2", title: "Pemrograman Web Lanjut", subject: "tech", group_type: "public", profiles: { full_name: "Ada L." } },
+                    { id: "dummy-3", title: "Diskusi Ekonomi Makro", subject: "ekonomi", group_type: "private", profiles: { full_name: "Adam S." } },
+                    { id: "dummy-4", title: "Beasiswa Luar Negeri", subject: "general", group_type: "public", profiles: { full_name: "Budi T." } },
+                    { id: "dummy-5", title: "Kalkulus Menengah", subject: "math", group_type: "public", profiles: { full_name: "Isaac N." } },
+                    { id: "dummy-6", title: "Design UI/UX Expert", subject: "design", group_type: "private", profiles: { full_name: "Steve J." } },
+                  ];
+
+                  const combinedAllGroups = [...allGroups, ...dummyExplores];
+
+                  let filteredGroups = [];
+
+                  if (!searchQuery.trim()) {
+                    // Tampilkan semua grup (HANYA DARI YANG BELUM DI-JOIN) jika tidak ada query
+                    const unjoinedGroups = combinedAllGroups.filter(
+                      (g) => !boards.some((b) => b.id === g.id)
+                    );
+                    filteredGroups = unjoinedGroups;
+                  } else {
+                    // Pencarian word-by-word DARI SEMUA GRUP (Termasuk yang sudah di-join)
+                    const keywords = searchQuery.toLowerCase().split(" ").filter(Boolean);
+                    filteredGroups = combinedAllGroups.filter((g) => {
+                      const titleMatch = g.title.toLowerCase();
+                      const subjectMatch = g.subject ? g.subject.toLowerCase() : "";
+                      return keywords.some(
+                        (kw) =>
+                          titleMatch.includes(kw) || subjectMatch.includes(kw)
+                      );
+                    });
+                  }
+
+                  if (filteredGroups.length === 0) {
+                    return (
+                      <div className="py-8 text-center text-gray-500 text-[14px]">
+                        Tidak ada grup yang sesuai dengan pencarianmu.
+                      </div>
+                    );
+                  }
+
+                  return filteredGroups.map((group) => {
+                    const isJoined = boards.some((b) => b.id === group.id);
+                    return (
                       <div
                         key={group.id}
                         className="p-4 border border-gray-100 rounded-2xl hover:border-blue-200 transition-colors flex items-center justify-between group/explore"
@@ -1026,7 +1126,7 @@ export default function StudyGroupPage() {
                             </h4>
                             <div className="flex gap-2 items-center">
                               <span className="text-[10px] bg-gray-100 text-gray-600 px-2 py-0.5 rounded-md font-medium uppercase tracking-wider">
-                                {group.subject || "General"}
+                                {parseSubject(group.subject).text}
                               </span>
                               <span className="text-[11px] text-gray-400 flex items-center ml-2">
                                 <Users size={12} className="mr-1" /> Host:{" "}
@@ -1035,27 +1135,38 @@ export default function StudyGroupPage() {
                             </div>
                           </div>
                         </div>
-                        <button
-                          onClick={() =>
-                            handleJoinDemo(
-                              group.group_type,
-                              group.id,
-                              group.title,
-                            )
-                          }
-                          className={`px-4 py-2 rounded-xl text-[13px] font-bold transition-all shadow-sm cursor-pointer whitespace-nowrap mt-2 sm:mt-0 ${group.group_type === "public" ? "bg-[#1a1c20] hover:bg-[#2a2c30] text-white shadow-gray-200" : "bg-white border border-gray-200 hover:bg-gray-50 text-[#1a1c20] shadow-sm flex items-center gap-1.5"}`}
-                        >
-                          {group.group_type === "public" ? (
-                            "Gabung"
-                          ) : (
-                            <>
-                              <Lock size={14} /> Minta Akses
-                            </>
-                          )}
-                        </button>
+
+                        {isJoined ? (
+                          <Link
+                            href={`/dashboard/study-group/${group.id}?title=${encodeURIComponent(group.title)}&type=${group.group_type || "private"}`}
+                            className="px-4 py-2 rounded-xl text-[13px] font-bold transition-all shadow-sm cursor-pointer whitespace-nowrap mt-2 sm:mt-0 bg-[#38bcfc] hover:bg-[#20a5e8] text-white flex items-center gap-1.5"
+                          >
+                            <Play size={14} /> Masuk Kelas
+                          </Link>
+                        ) : (
+                          <button
+                            onClick={() =>
+                              handleJoinDemo(
+                                group.group_type,
+                                group.id,
+                                group.title,
+                              )
+                            }
+                            className={`px-4 py-2 rounded-xl text-[13px] font-bold transition-all shadow-sm cursor-pointer whitespace-nowrap mt-2 sm:mt-0 ${group.group_type === "public" ? "bg-[#1a1c20] hover:bg-[#2a2c30] text-white shadow-gray-200" : "bg-white border border-gray-200 hover:bg-gray-50 text-[#1a1c20] shadow-sm flex items-center gap-1.5"}`}
+                          >
+                            {group.group_type === "public" ? (
+                              "Gabung"
+                            ) : (
+                              <>
+                                <Lock size={14} /> Minta Akses
+                              </>
+                            )}
+                          </button>
+                        )}
                       </div>
-                    ))
-                )}
+                    );
+                  });
+                })()}
               </div>
             </div>
 
@@ -1141,13 +1252,14 @@ export default function StudyGroupPage() {
                 <div className="col-span-full py-12 flex justify-center">
                   <div className="w-8 h-8 rounded-full border-4 border-gray-200 border-t-[#38bcfc] animate-spin"></div>
                 </div>
-              ) : allGroups.length === 0 ? (
+              ) : publicLiveSessions.length === 0 ? (
                 <div className="col-span-full text-center py-12 text-gray-500">
-                  <p>Tidak ada sesi live saat ini.</p>
+                  <p>Tidak ada sesi live publik saat ini.</p>
                 </div>
               ) : (
-                allGroups.map((group) => {
-                  const style = getCardStyle(group.subject);
+                publicLiveSessions.map((group) => {
+                  const parsed = parseSubject(group.subject);
+                  const style = getCardStyle(parsed.icon);
                   return (
                     <div
                       key={group.id}
@@ -1157,7 +1269,7 @@ export default function StudyGroupPage() {
                       className="border border-gray-100 rounded-2xl p-4 flex gap-4 hover:border-blue-200 hover:bg-gray-50 transition-all group cursor-pointer relative overflow-hidden"
                     >
                       <div
-                        className={`w-12 h-12 rounded-xl bg-linear-to-br flex items-center justify-center shrink-0 ${style.color}`}
+                        className={`w-12 h-12 rounded-xl flex items-center justify-center shrink-0 ${style.color}`}
                       >
                         {style.icon}
                       </div>
@@ -1166,7 +1278,7 @@ export default function StudyGroupPage() {
                           {group.title}
                         </h4>
                         <span className="text-[10px] font-black uppercase tracking-wider text-gray-400 mb-1.5 block">
-                          {group.subject || "General"}
+                          {parsed.text}
                         </span>
                         <div className="flex items-center gap-2 text-gray-500 text-[11px] font-medium">
                           <div className="flex items-center gap-1">
@@ -1197,7 +1309,7 @@ export default function StudyGroupPage() {
       {isLeaderboardModalOpen && (
         <div className="fixed inset-0 bg-gray-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
           <div className="bg-white rounded-[32px] shadow-2xl w-full max-w-[500px] overflow-hidden">
-            <div className="bg-linear-to-r from-amber-400 via-brand-400 to-rose-400 p-8 text-center relative">
+            <div className="bg-blue-400 p-8 text-center relative">
               <button
                 onClick={() => setIsLeaderboardModalOpen(false)}
                 className="absolute top-4 right-4 p-2 text-white/70 hover:text-white rounded-full transition-colors cursor-pointer"
@@ -1213,25 +1325,7 @@ export default function StudyGroupPage() {
               </p>
             </div>
             <div className="px-6 py-4 max-h-[50vh] overflow-y-auto">
-              {[
-                ...leaderboard,
-                {
-                  rank: 6,
-                  name: "Reza A.",
-                  hours: 25,
-                  points: 1500,
-                  trend: "down",
-                  initial: "R",
-                },
-                {
-                  rank: 7,
-                  name: "Tania S.",
-                  hours: 22,
-                  points: 1350,
-                  trend: "up",
-                  initial: "T",
-                },
-              ].map((user, idx) => (
+              {dynamicLeaderboard.map((user, idx) => (
                 <div
                   key={user.name}
                   className="flex items-center justify-between p-3 border-b border-gray-50 last:border-0 hover:bg-gray-50 rounded-xl transition-colors cursor-pointer"

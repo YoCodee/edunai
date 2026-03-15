@@ -182,3 +182,41 @@ Formatting RULES:
     };
   }
 }
+
+export async function updateMemberRole(boardId: string, memberId: string, newRole: string) {
+  try {
+    const supabase = await createClient();
+
+    // Check if user is already a member
+    const { data: existing, error: findError } = await supabase
+      .from("board_members")
+      .select("board_id")
+      .eq("board_id", boardId)
+      .eq("user_id", memberId);
+
+    if (existing && existing.length > 0) {
+      const { error } = await supabase
+        .from("board_members")
+        .update({ role: newRole })
+        .eq("board_id", boardId)
+        .eq("user_id", memberId);
+      if (error) {
+        console.error("Update role error:", error);
+        return { success: false, error: error.message };
+      }
+    } else {
+      // If not, insert them
+      const { error } = await supabase
+        .from("board_members")
+        .insert([{ board_id: boardId, user_id: memberId, role: newRole }]);
+      if (error) {
+        console.error("Insert role error:", error);
+        return { success: false, error: error.message };
+      }
+    }
+
+    return { success: true };
+  } catch (e: any) {
+    return { success: false, error: e.message };
+  }
+}
