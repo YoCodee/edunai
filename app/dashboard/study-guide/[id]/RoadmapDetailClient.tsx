@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo, useEffect, useRef } from "react";
+import { useState, useMemo, useEffect, useRef, createElement } from "react";
 import Link from "next/link";
 import {
   ArrowLeft,
@@ -19,6 +19,15 @@ import {
   BookOpen,
   Sparkles,
   Loader2,
+  Target,
+  Calendar,
+  LayoutDashboard,
+  Zap,
+  Music,
+  Palette,
+  Code,
+  Beaker,
+  LucideIcon,
 } from "lucide-react";
 import {
   Roadmap,
@@ -36,6 +45,36 @@ import {
 } from "../actions";
 import { processImageWithAI } from "../../ai-workspace/actions";
 import clsx from "clsx";
+
+// Icon mapping for dynamic rendering
+const ICON_MAP: Record<string, LucideIcon> = {
+  BookOpen,
+  FileText,
+  Target,
+  Calendar,
+  Code,
+  Palette,
+  Music,
+  Globe,
+  LayoutDashboard,
+  Zap,
+  Beaker,
+  Sparkles,
+};
+
+function getIconComponent(iconName: string): LucideIcon {
+  return ICON_MAP[iconName] || BookOpen;
+}
+
+// Helper component to render roadmap icon
+function RoadmapIcon({ iconName, size = 24 }: { iconName: string; size?: number }) {
+  const IconComponent = useMemo(() => getIconComponent(iconName), [iconName]);
+  return createElement(IconComponent, {
+    size,
+    className: "text-gray-700",
+    strokeWidth: 2,
+  });
+}
 
 interface Dependency {
   unit_id: string;
@@ -152,7 +191,9 @@ export default function RoadmapDetailClient({
               <ArrowLeft size={20} className="text-gray-600" />
             </Link>
             <div className="flex items-center gap-3">
-              <span className="text-[32px]">{roadmap.cover_emoji}</span>
+              <div className="w-12 h-12 rounded-xl bg-gray-100 flex items-center justify-center flex-shrink-0">
+                <RoadmapIcon iconName={roadmap.cover_emoji} size={24} />
+              </div>
               <div>
                 <h1 className="text-[20px] font-bold text-gray-900">
                   {roadmap.title}
@@ -173,7 +214,7 @@ export default function RoadmapDetailClient({
                   <div
                     className={clsx(
                       "h-full rounded-full transition-all duration-500",
-                      getProgress() === 100 ? "bg-green-500" : "bg-indigo-500"
+                      getProgress() === 100 ? "bg-gray-900" : "bg-gray-600"
                     )}
                     style={{ width: `${getProgress()}%` }}
                   />
@@ -195,8 +236,8 @@ export default function RoadmapDetailClient({
             {/* Legend */}
             <div className="flex items-center justify-center gap-6 mb-8">
               {[
-                { status: "available", icon: Circle, label: "Tersedia", color: "text-indigo-500" },
-                { status: "completed", icon: CheckCircle2, label: "Selesai", color: "text-green-500" },
+                { status: "available", icon: Circle, label: "Tersedia", color: "text-gray-700" },
+                { status: "completed", icon: CheckCircle2, label: "Selesai", color: "text-gray-900" },
               ].map((item) => (
                 <div key={item.status} className="flex items-center gap-2">
                   <item.icon size={16} className={item.color} />
@@ -285,16 +326,16 @@ function UnitNode({ unit, isSelected, onClick, dependencies }: UnitNodeProps) {
   const statusConfig = {
     available: {
       bg: "bg-white",
-      border: "border-indigo-300",
+      border: "border-gray-300",
       icon: Circle,
-      iconColor: "text-indigo-500",
+      iconColor: "text-gray-700",
       textColor: "text-gray-700",
     },
     completed: {
-      bg: "bg-green-50",
-      border: "border-green-300",
+      bg: "bg-gray-50",
+      border: "border-gray-900",
       icon: CheckCircle2,
-      iconColor: "text-green-500",
+      iconColor: "text-gray-900",
       textColor: "text-gray-700",
     },
   };
@@ -309,7 +350,7 @@ function UnitNode({ unit, isSelected, onClick, dependencies }: UnitNodeProps) {
         "relative group w-44 p-4 rounded-2xl border-2 transition-all duration-200 cursor-pointer",
         config.bg,
         config.border,
-        isSelected && "ring-2 ring-indigo-500 ring-offset-2",
+        isSelected && "ring-2 ring-gray-900 ring-offset-2",
         "hover:shadow-lg hover:-translate-y-1"
       )}
     >
@@ -520,11 +561,11 @@ function UnitDetailPanel({
   const getSourceIcon = (sourceType: string) => {
     switch (sourceType) {
       case "youtube":
-        return <Youtube size={14} className="text-red-500" />;
+        return <Youtube size={14} className="text-gray-700" />;
       case "article":
-        return <Globe size={14} className="text-blue-500" />;
+        return <Globe size={14} className="text-gray-700" />;
       case "documentation":
-        return <BookOpen size={14} className="text-green-500" />;
+        return <BookOpen size={14} className="text-gray-700" />;
       default:
         return <ExternalLink size={14} className="text-gray-500" />;
     }
@@ -617,7 +658,7 @@ function UnitDetailPanel({
                 <button
                   onClick={handleSaveEdit}
                   disabled={isSavingEdit || !editTitle.trim()}
-                  className="flex-1 py-2 bg-indigo-600 text-white text-[12px] font-semibold rounded-lg hover:bg-indigo-700 disabled:opacity-50 flex items-center justify-center gap-1"
+                  className="flex-1 py-2 bg-gray-900 text-white text-[12px] font-semibold rounded-lg hover:bg-[#2a2c30] disabled:opacity-50 flex items-center justify-center gap-1"
                 >
                   {isSavingEdit ? (
                     <>
@@ -659,7 +700,7 @@ function UnitDetailPanel({
                   className="flex items-center gap-2 px-3 py-2 bg-gray-50 rounded-lg"
                 >
                   {["completed", "mastered"].includes(dep.status) ? (
-                    <CheckCircle2 size={14} className="text-green-500" />
+                    <CheckCircle2 size={14} className="text-gray-900" />
                   ) : (
                     <Circle size={14} className="text-gray-400" />
                   )}
@@ -678,7 +719,7 @@ function UnitDetailPanel({
             </h5>
             <button
               onClick={() => setShowAddResource(!showAddResource)}
-              className="text-[12px] text-indigo-600 font-medium hover:text-indigo-700 flex items-center gap-1"
+              className="text-[12px] text-gray-700 font-medium hover:text-gray-900 flex items-center gap-1"
             >
               <Plus size={12} /> Tambah
             </button>
@@ -698,7 +739,7 @@ function UnitDetailPanel({
                     className={clsx(
                       "flex-1 py-1.5 text-[11px] font-semibold rounded-lg transition-colors",
                       addResourceTab === tab.id
-                        ? "bg-white text-indigo-600 shadow-sm"
+                        ? "bg-white text-gray-900 shadow-sm"
                         : "text-gray-500 hover:text-gray-700"
                     )}
                   >
@@ -726,7 +767,7 @@ function UnitDetailPanel({
                   <button
                     onClick={handleAddLink}
                     disabled={isAdding}
-                    className="w-full py-2 bg-indigo-600 text-white text-[12px] font-semibold rounded-lg hover:bg-indigo-700 disabled:opacity-50"
+                    className="w-full py-2 bg-gray-900 text-white text-[12px] font-semibold rounded-lg hover:bg-[#2a2c30] disabled:opacity-50"
                   >
                     {isAdding ? "Menambahkan..." : "Tambah Link"}
                   </button>
@@ -784,7 +825,7 @@ function UnitDetailPanel({
                         </button>
                         <button
                           onClick={() => galleryInputRef.current?.click()}
-                          className="flex-1 py-2 bg-indigo-100 text-indigo-600 text-[12px] font-semibold rounded-lg hover:bg-indigo-200 flex items-center justify-center gap-1"
+                          className="flex-1 py-2 bg-gray-100 text-gray-700 text-[12px] font-semibold rounded-lg hover:bg-gray-200 flex items-center justify-center gap-1"
                         >
                           <Upload size={12} /> Upload
                         </button>
@@ -852,7 +893,7 @@ function UnitDetailPanel({
                           <button
                             onClick={handleSaveScan}
                             disabled={isSavingScan}
-                            className="flex-1 py-2 bg-indigo-600 text-white text-[12px] font-semibold rounded-lg hover:bg-indigo-700 disabled:opacity-50"
+                            className="flex-1 py-2 bg-gray-900 text-white text-[12px] font-semibold rounded-lg hover:bg-[#2a2c30] disabled:opacity-50"
                           >
                             {isSavingScan ? "Menyimpan..." : "Simpan"}
                           </button>
@@ -878,15 +919,15 @@ function UnitDetailPanel({
                   className="flex items-center gap-2 px-3 py-2 bg-gray-50 rounded-lg group"
                 >
                   {resource.resource_type === "link" && (
-                    <ExternalLink size={14} className="text-blue-500" />
+                    <ExternalLink size={14} className="text-gray-700" />
                   )}
                   {resource.resource_type === "note" && (
-                    <FileText size={14} className="text-indigo-500" />
+                    <FileText size={14} className="text-gray-700" />
                   )}
                   {resource.resource_type === "note" && resource.linked_note_id ? (
                     <Link
                       href={`/dashboard/ai-workspace?note=${resource.linked_note_id}`}
-                      className="flex-1 text-[12px] text-indigo-600 hover:text-indigo-700 truncate hover:underline"
+                      className="flex-1 text-[12px] text-gray-700 hover:text-gray-900 truncate hover:underline"
                     >
                       {resource.title}
                     </Link>
@@ -907,9 +948,9 @@ function UnitDetailPanel({
                   )}
                   <button
                     onClick={() => handleRemoveResource(resource.id)}
-                    className="p-1 hover:bg-red-100 rounded opacity-0 group-hover:opacity-100 transition-opacity"
+                    className="p-1 hover:bg-gray-200 rounded opacity-0 group-hover:opacity-100 transition-opacity"
                   >
-                    <Trash2 size={12} className="text-red-500" />
+                    <Trash2 size={12} className="text-gray-700" />
                   </button>
                 </div>
               ))}
@@ -927,7 +968,7 @@ function UnitDetailPanel({
                 <button
                   onClick={handleGenerateReferences}
                   disabled={isGeneratingRefs}
-                  className="text-[12px] text-indigo-600 font-medium hover:text-indigo-700 flex items-center gap-1 disabled:opacity-50"
+                  className="text-[12px] text-gray-700 font-medium hover:text-gray-900 flex items-center gap-1 disabled:opacity-50"
                 >
                   {isGeneratingRefs ? (
                     <>
@@ -973,13 +1014,13 @@ function UnitDetailPanel({
                         className="p-1 hover:bg-gray-200 rounded flex-shrink-0"
                         onClick={(e) => e.stopPropagation()}
                       >
-                        <ExternalLink size={12} className="text-gray-400 hover:text-indigo-500" />
+                        <ExternalLink size={12} className="text-gray-400 hover:text-gray-700" />
                       </a>
                       <button
                         onClick={() => handleRemoveReference(index)}
-                        className="p-1 hover:bg-red-100 rounded opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0"
+                        className="p-1 hover:bg-gray-200 rounded opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0"
                       >
-                        <Trash2 size={12} className="text-red-500" />
+                        <Trash2 size={12} className="text-gray-700" />
                       </button>
                     </div>
                   </div>
@@ -1005,7 +1046,7 @@ function UnitDetailPanel({
         {unit.status === "available" && (
           <button
             onClick={() => onStatusChange(unit.id, "completed")}
-            className="w-full py-2.5 bg-green-500 hover:bg-green-600 text-white text-[13px] font-bold rounded-xl flex items-center justify-center gap-2 transition-colors"
+            className="w-full py-2.5 bg-gray-900 hover:bg-[#2a2c30] text-white text-[13px] font-bold rounded-xl flex items-center justify-center gap-2 transition-colors"
           >
             <CheckCircle2 size={16} /> Tandai Selesai
           </button>
@@ -1026,8 +1067,8 @@ function UnitDetailPanel({
 // ==================== Status Badge ====================
 function StatusBadge({ status }: { status: string }) {
   const config = {
-    available: { bg: "bg-indigo-100", text: "text-indigo-700", label: "Tersedia" },
-    completed: { bg: "bg-green-100", text: "text-green-700", label: "Selesai" },
+    available: { bg: "bg-gray-100", text: "text-gray-700", label: "Tersedia" },
+    completed: { bg: "bg-gray-900", text: "text-white", label: "Selesai" },
   };
 
   const c = config[status as keyof typeof config] || config.available;
