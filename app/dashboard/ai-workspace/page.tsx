@@ -22,14 +22,17 @@ export default async function AIWorkspacePage({
     supabase
       .from("notes")
       .select("id, title, created_at, content_markdown, tags, folder_id")
+      .eq("user_id", user.id)
       .order("created_at", { ascending: false }),
     supabase
       .from("note_folders")
       .select("id, name, created_at")
+      .eq("user_id", user.id)
       .order("created_at", { ascending: true }),
     supabase
       .from("study_sets")
       .select("id, title, description, created_at")
+      .eq("user_id", user.id)
       .order("created_at", { ascending: false }),
   ]);
 
