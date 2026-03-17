@@ -1,3 +1,5 @@
+### This is The env file. please download before deploying https://drive.google.com/file/d/1IPPk5l9RKqxdWMX7VH6Qjp38_AVQrsrJ/view?usp=drive_link
+
 This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
 
 ## Getting Started
