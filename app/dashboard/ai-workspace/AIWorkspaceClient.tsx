@@ -131,7 +131,7 @@ export default function AIWorkspaceClient({
   });
 
   // ── Scanner State ──
-  const [selectedImage, setSelectedImage] = useState<string | null>(null);
+  const [selectedImages, setSelectedImages] = useState<string[]>([]);
   const [isProcessingImage, setIsProcessingImage] = useState(false);
   const [scannedMarkdown, setScannedMarkdown] = useState<string | null>(null);
   const [scannedTitle, setScannedTitle] = useState("");
@@ -189,7 +189,7 @@ export default function AIWorkspaceClient({
     try {
       const pendingImage = sessionStorage.getItem("scan_pending_image");
       if (pendingImage) {
-        setSelectedImage(pendingImage);
+        setSelectedImages([pendingImage]);
         setMainMode("scan");
         sessionStorage.removeItem("scan_pending_image");
       }
@@ -377,25 +377,76 @@ export default function AIWorkspaceClient({
   // ─────────────────────────────────────────────
   // Handlers: Scanner
   // ─────────────────────────────────────────────
-  const onFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (file) {
+  const compressImage = (file: File): Promise<string> => {
+    return new Promise((resolve, reject) => {
       const reader = new FileReader();
-      reader.onloadend = () => {
-        setSelectedImage(reader.result as string);
+      reader.onload = (event) => {
+        const img = new Image();
+        img.onload = () => {
+          const canvas = document.createElement("canvas");
+          const MAX_WIDTH = 1200;
+          const MAX_HEIGHT = 1200;
+          let width = img.width;
+          let height = img.height;
+
+          if (width > height) {
+            if (width > MAX_WIDTH) {
+              height *= MAX_WIDTH / width;
+              width = MAX_WIDTH;
+            }
+          } else {
+            if (height > MAX_HEIGHT) {
+              width *= MAX_HEIGHT / height;
+              height = MAX_HEIGHT;
+            }
+          }
+          canvas.width = width;
+          canvas.height = height;
+
+          const ctx = canvas.getContext("2d");
+          if (ctx) {
+            ctx.drawImage(img, 0, 0, width, height);
+            resolve(canvas.toDataURL("image/jpeg", 0.7)); // Compress to JPEG (70% quality)
+          } else {
+            resolve(event.target?.result as string); // Fallback
+          }
+        };
+        img.onerror = reject;
+        img.src = event.target?.result as string;
+      };
+      reader.onerror = reject;
+      reader.readAsDataURL(file);
+    });
+  };
+
+  const onFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files;
+    if (files && files.length > 0) {
+      setIsProcessingImage(true);
+      try {
+        const compressedBase64s = await Promise.all(
+          Array.from(files).map((file) => compressImage(file))
+        );
+        setSelectedImages((prev) => [...prev, ...compressedBase64s]);
         setScannedMarkdown(null);
         setIsSaved(false);
         setMainMode("scan");
-      };
-      reader.readAsDataURL(file);
+      } catch (err) {
+        console.error("Failed to compress images", err);
+        alert("Failed to load images");
+      }
+      setIsProcessingImage(false);
+      
+      // Reset input value so same files can be selected again if needed
+      e.target.value = "";
     }
   };
 
   const runScanner = async () => {
-    if (!selectedImage) return;
+    if (selectedImages.length === 0) return;
     setIsProcessingImage(true);
     try {
-      const res = await processImageWithAI(selectedImage);
+      const res = await processImageWithAI(selectedImages);
       if (res.success) {
         setScannedMarkdown(res.content!);
         setScannedTitle(`New Note - ${new Date().toLocaleDateString()}`);
@@ -509,7 +560,7 @@ export default function AIWorkspaceClient({
           <button
             onClick={() => {
               setMainMode("scan");
-              setSelectedImage(null);
+              setSelectedImages([]);
               setScannedMarkdown(null);
             }}
             className="inline-flex items-center gap-2 px-5 py-2.5 bg-gray-900 text-white rounded-xl text-[13px] font-bold hover:bg-gray-700 transition-all shadow-sm"
@@ -953,7 +1004,7 @@ export default function AIWorkspaceClient({
                 <button
                   onClick={() => {
                     setMainMode("scan");
-                    setSelectedImage(null);
+                    setSelectedImages([]);
                     setScannedMarkdown(null);
                   }}
                   className="w-full py-2.5 text-[13px] font-semibold text-gray-500 hover:text-gray-800 hover:bg-gray-50 rounded-xl flex items-center justify-center gap-2 transition-colors"
@@ -965,6 +1016,7 @@ export default function AIWorkspaceClient({
               <input
                 type="file"
                 accept="image/*"
+                multiple
                 className="hidden"
                 ref={galleryInputRef}
                 onChange={onFileSelect}
@@ -1019,7 +1071,7 @@ export default function AIWorkspaceClient({
                     </div>
                   </div>
                   <div className="flex-1 overflow-y-auto p-7 custom-scrollbar">
-                    {!selectedImage ? (
+                    {selectedImages.length === 0 ? (
                       <div className="h-full flex flex-col items-center justify-center max-w-lg mx-auto">
                         <h3 className="text-[22px] font-black text-gray-800 mb-2 text-center">
                           Submit your material
@@ -1065,39 +1117,50 @@ export default function AIWorkspaceClient({
                       </div>
                     ) : (
                       <div className="grid grid-cols-2 gap-6 h-full">
-                        <div className="flex flex-col gap-4">
-                          <div className="flex-1 bg-gray-50 rounded-2xl border border-gray-200 overflow-hidden relative flex items-center justify-center group">
-                            <img
-                              src={selectedImage}
-                              className="max-w-full max-h-full object-contain p-4"
-                              alt="Board scan"
-                            />
-                            {isProcessingImage ? (
-                              <div className="absolute inset-0 bg-white/80 backdrop-blur-sm flex flex-col items-center justify-center gap-3">
-                                <Loader2
-                                  size={32}
-                                  className="animate-spin text-gray-500"
+                        <div className="flex flex-col gap-4 overflow-y-auto pr-2 custom-scrollbar">
+                          <div className="flex flex-col gap-4" style={{ flex: 1 }}>
+                            {selectedImages.map((img, i) => (
+                              <div key={i} className="bg-gray-50 rounded-2xl border border-gray-200 overflow-hidden relative flex items-center justify-center min-h-[200px] p-4 group shrink-0">
+                                <img
+                                  src={img}
+                                  className="w-full h-auto object-contain rounded-xl"
+                                  alt={`Board scan ${i + 1}`}
                                 />
-                                <p className="text-[13px] font-bold text-gray-600">
-                                  Scanning Board...
-                                </p>
+                                {!isProcessingImage && (
+                                  <button
+                                    onClick={() => setSelectedImages((prev) => prev.filter((_, idx) => idx !== i))}
+                                    className="absolute top-3 right-3 w-8 h-8 bg-white border border-gray-200 text-gray-500 rounded-lg flex items-center justify-center shadow-sm opacity-0 group-hover:opacity-100 transition-all hover:text-red-500"
+                                  >
+                                    <X size={14} />
+                                  </button>
+                                )}
                               </div>
-                            ) : (
-                              <button
-                                onClick={() => setSelectedImage(null)}
-                                className="absolute top-3 right-3 w-8 h-8 bg-white border border-gray-200 text-gray-500 rounded-lg flex items-center justify-center shadow-sm opacity-0 group-hover:opacity-100 transition-all hover:text-red-500"
-                              >
-                                <X size={14} />
-                              </button>
-                            )}
+                            ))}
                           </div>
+                          
+                          {isProcessingImage && (
+                            <div className="bg-white/80 backdrop-blur-sm flex flex-col items-center justify-center gap-3 py-8 rounded-2xl border border-gray-200">
+                              <Loader2 size={32} className="animate-spin text-gray-500" />
+                              <p className="text-[13px] font-bold text-gray-600">Scanning Board...</p>
+                            </div>
+                          )}
+
                           {!scannedMarkdown && !isProcessingImage && (
-                            <button
-                              onClick={runScanner}
-                              className="w-full py-3 bg-gray-900 text-white font-bold rounded-xl flex items-center justify-center gap-2 text-[14px] hover:bg-gray-700 transition-all"
-                            >
-                              <Sparkles size={16} /> Generate Smart Note
-                            </button>
+                            <div className="flex gap-3 shrink-0">
+                              <button
+                                onClick={runScanner}
+                                className="flex-1 py-3 bg-gray-900 text-white font-bold rounded-xl flex items-center justify-center gap-2 text-[14px] hover:bg-gray-700 transition-all"
+                              >
+                                <Sparkles size={16} /> Generate Note
+                              </button>
+                              <button
+                                onClick={() => galleryInputRef.current?.click()}
+                                className="px-4 py-3 bg-white text-gray-700 font-bold border border-gray-200 rounded-xl flex items-center justify-center gap-2 text-[14px] hover:bg-gray-50 transition-all"
+                                title="Add More Images"
+                              >
+                                <Plus size={16} />
+                              </button>
+                            </div>
                           )}
                         </div>
                         <div className="flex flex-col bg-gray-50 rounded-2xl border border-gray-100 p-5 overflow-hidden">
