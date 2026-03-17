@@ -108,7 +108,7 @@ export async function generateAITasks(
 
   // 2. Query Gemini to break down the syllabus
   try {
-    const apiKey = "AIzaSyAXzH_tLDjO-53RtCgraA4-FJ9QrOe-bPY";
+    const apiKey = process.env.GOOGLE_AI_API_KEY;
     if (!apiKey) throw new Error("Missing AI API Key");
 
     const model = new ChatGoogleGenerativeAI({
