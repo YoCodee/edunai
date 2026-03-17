@@ -153,7 +153,7 @@ Rules for scheduling:
 VERY IMPORTANT: Use plain local datetime WITHOUT any timezone offset (e.g. "2026-02-28T14:00:00" NOT "2026-02-28T14:00:00Z" or "2026-02-28T14:00:00+07:00").`;
 
   try {
-    const apiKey = process.env.GOOGLE_AI_API_KEY;
+    const apiKey = "AIzaSyAXzH_tLDjO-53RtCgraA4-FJ9QrOe-bPY";
     if (!apiKey) throw new Error("Missing AI API Key");
 
     const model = new ChatGoogleGenerativeAI({
@@ -315,7 +315,7 @@ export async function importKRSWithAI(
   fileBase64: string,
   mimeType: string,
 ): Promise<{ rows?: BulkClassRow[]; rawText?: string; error?: string }> {
-  const apiKey = process.env.GOOGLE_AI_API_KEY;
+  const apiKey = "AIzaSyAXzH_tLDjO-53RtCgraA4-FJ9QrOe-bPY";
   if (!apiKey) return { error: "Missing AI API Key" };
 
   const today = format(new Date(), "yyyy-MM-dd");

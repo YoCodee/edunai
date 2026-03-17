@@ -4,9 +4,9 @@ import { ChatGoogleGenerativeAI } from "@langchain/google-genai";
 import { HumanMessage } from "@langchain/core/messages";
 import { createClient } from "@/utils/supabase/server";
 
-export async function processImageWithAI(base64Image: string) {
+export async function processImageWithAI(base64Image: string | string[]) {
   try {
-    const apiKey = process.env.GOOGLE_AI_API_KEY;
+    const apiKey = "AIzaSyAXzH_tLDjO-53RtCgraA4-FJ9QrOe-bPY";
     if (!apiKey) {
       throw new Error("Missing Gemini API Key");
     }
@@ -19,27 +19,31 @@ export async function processImageWithAI(base64Image: string) {
       temperature: 0.4, // Keep it relatively deterministic for summarizing
     });
 
-    // Create the message with multi-modal content
-    // We strip the "data:image/jpeg;base64," prefix if it exists to pass pure base64
-    // Wait, LangChain's image_url accepts the full data URL scheme.
-    // Ensure the base64Image has the data URL prefix.
-    const message = new HumanMessage({
-      content: [
-        {
-          type: "text",
-          text: `Kamu adalah asisten akademik yang cerdas dan ahli dalam merangkum materi.
+    // Handle single or multiple images
+    const imagesArray = Array.isArray(base64Image) ? base64Image : [base64Image];
+
+    const contentArr: any[] = [
+      {
+        type: "text",
+        text: `Kamu adalah asisten akademik yang cerdas dan ahli dalam merangkum materi.
 Tolong baca dengan teliti dan analisis gambar/foto catatan yang saya berikan.
 Tugas kamu adalah:
 1. Ekstrak (OCR) semua teks penting yang ada di dalam gambar.
-2. Ubah dan rangkum kata-kata tersebut menjadi sebuah ringkasan (Summary) yang sangat rapi dan mudah dihafal oleh mahasiswa.
+2. Gabungkan informasi dari semua gambar jika ada lebih dari satu, lalu ubah dan rangkum kata-kata tersebut menjadi sebuah ringkasan (Summary) yang sangat rapi dan mudah dihafal oleh mahasiswa.
 3. Gunakan format Markdown (Gunakan Heading, Bullet points, list, dan teks tebal/bold untuk keyword penting).
 4. Buat bahasanya tetap berbobot namun mudah dipahami. Gunakan Bahasa Indonesia.`,
-        },
-        {
-          type: "image_url",
-          image_url: base64Image, // Expected to be in format: data:image/jpeg;base64,...
-        },
-      ],
+      }
+    ];
+
+    imagesArray.forEach((img) => {
+      contentArr.push({
+        type: "image_url",
+        image_url: img,
+      });
+    });
+
+    const message = new HumanMessage({
+      content: contentArr,
     });
 
     const response = await model.invoke([message]);

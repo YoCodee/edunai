@@ -179,7 +179,7 @@ export async function getNoteContent(noteId: string) {
 
 export async function summarizeStudyGroup(messagesText: string) {
     try {
-        const apiKey = process.env.GOOGLE_AI_API_KEY;
+        const apiKey = "AIzaSyAXzH_tLDjO-53RtCgraA4-FJ9QrOe-bPY";
         if (!apiKey) {
             throw new Error("API Key tidak ditemukan.");
         }

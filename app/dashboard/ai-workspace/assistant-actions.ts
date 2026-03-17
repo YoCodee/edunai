@@ -26,7 +26,7 @@ export async function generateStudyMaterial(
     return { error: "Note not found." };
   }
 
-  const apiKey = process.env.GOOGLE_AI_API_KEY;
+  const apiKey = "AIzaSyAXzH_tLDjO-53RtCgraA4-FJ9QrOe-bPY";
   if (!apiKey) return { error: "Missing AI API Key" };
 
   try {

@@ -151,7 +151,7 @@ async function generateRoadmapStructure(
   topic: string,
   description?: string
 ): Promise<{ units: GeneratedUnit[] } | { error: string }> {
-  const apiKey = process.env.GOOGLE_AI_API_KEY;
+  const apiKey = "AIzaSyAXzH_tLDjO-53RtCgraA4-FJ9QrOe-bPY";
   if (!apiKey) return { error: "Missing AI API Key" };
 
   try {
@@ -218,7 +218,7 @@ RULES:
 async function generateRoadmapFromNoteContent(
   noteContents: { title: string; content: string }[]
 ): Promise<{ units: GeneratedUnit[] } | { error: string }> {
-  const apiKey = process.env.GOOGLE_AI_API_KEY;
+  const apiKey = "AIzaSyAXzH_tLDjO-53RtCgraA4-FJ9QrOe-bPY";
   if (!apiKey) return { error: "Missing AI API Key" };
 
   try {
@@ -918,7 +918,7 @@ export async function generateUnitReferences(
 
   if (!user) return { error: "Unauthorized" };
 
-  const apiKey = process.env.GOOGLE_AI_API_KEY;
+  const apiKey = "AIzaSyAXzH_tLDjO-53RtCgraA4-FJ9QrOe-bPY";
   if (!apiKey) return { error: "Missing AI API Key" };
 
   try {
