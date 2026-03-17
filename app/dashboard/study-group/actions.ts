@@ -133,6 +133,34 @@ export async function deleteStudyGroup(groupId: string) {
     return { success: true };
 }
 
+export async function leaveStudyGroup(groupId: string) {
+    const supabase = await createClient();
+    const { data: { user } } = await supabase.auth.getUser();
+
+    if (!user) return { error: "User not authenticated" };
+
+    // Check if user is the owner (admin cannot leave, must delete instead)
+    const { data: group } = await supabase
+        .from("study_groups")
+        .select("owner_id")
+        .eq("id", groupId)
+        .single();
+
+    if (group && group.owner_id === user.id) {
+        return { error: "Kamu adalah pemilik grup ini. Gunakan opsi 'Hapus Grup' untuk menghapus grup." };
+    }
+
+    // Remove user from study_group_members
+    const { error } = await supabase
+        .from("study_group_members")
+        .delete()
+        .eq("group_id", groupId)
+        .eq("user_id", user.id);
+
+    if (error) return { error: error.message };
+    return { success: true };
+}
+
 export async function getNoteContent(noteId: string) {
     const supabase = await createClient();
     const { data: { user } } = await supabase.auth.getUser();

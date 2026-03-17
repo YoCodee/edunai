@@ -54,7 +54,7 @@ export default function DashboardHeader({
   }, []);
 
   return (
-    <header className="h-[72px] bg-dash-bg/80 z-0 backdrop-blur-xl border-b border-dash-border flex items-center justify-between px-6 sticky top-0 transition-colors">
+    <header className="h-[72px] bg-dash-bg/80 z-[9999] backdrop-blur-xl border-b border-dash-border flex items-center justify-between px-6 sticky top-0 transition-colors">
       {/* Left side: Search */}
       <div className="flex items-center flex-1">
         <div className="relative w-full max-w-sm hidden md:block">

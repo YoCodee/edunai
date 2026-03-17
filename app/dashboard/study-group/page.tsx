@@ -27,8 +27,14 @@ import {
   X,
   Trash2,
   Monitor,
+  LogOut,
 } from "lucide-react";
 import { useState, useEffect } from "react";
+import { clsx, type ClassValue } from "clsx";
+
+function cn(...inputs: ClassValue[]) {
+  return clsx(inputs);
+}
 import { createClient } from "@/utils/supabase/client";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -38,6 +44,7 @@ import {
   joinStudyGroupViaCode,
   joinPublicGroup,
   deleteStudyGroup,
+  leaveStudyGroup,
 } from "./actions";
 
 // --- Dummy Data ---
@@ -165,6 +172,21 @@ export default function StudyGroupPage() {
   const [joinCodeInput, setJoinCodeInput] = useState("");
   const [isJoinPrivateModalOpen, setIsJoinPrivateModalOpen] = useState(false);
   const [submitting, setSubmitting] = useState(false);
+
+  // --- Custom Confirmation Modal State ---
+  const [confirmConfig, setConfirmConfig] = useState<{
+    isOpen: boolean;
+    title: string;
+    message: string;
+    onConfirm: () => void;
+    type: "danger" | "warning";
+  }>({
+    isOpen: false,
+    title: "",
+    message: "",
+    onConfirm: () => {},
+    type: "warning",
+  });
 
   const supabase = createClient();
   const router = useRouter();
@@ -378,7 +400,7 @@ export default function StudyGroupPage() {
     }
   };
 
-  const handleDeleteGroup = async (
+  const handleDeleteGroup = (
     e: React.MouseEvent,
     groupId: string,
     groupTitle: string,
@@ -386,20 +408,50 @@ export default function StudyGroupPage() {
     e.preventDefault();
     e.stopPropagation();
 
-    const isConfirmed = window.confirm(
-      `Apakah kamu yakin ingin menghapus grup "${groupTitle}"?\nSemua log chat, lampiran resource, dan anggota didalamnya akan terhapus. Tindakan ini tidak dapat dibatalkan.`,
-    );
-    if (!isConfirmed) return;
+    setConfirmConfig({
+      isOpen: true,
+      title: "Hapus Grup Belajar",
+      message: `Apakah kamu yakin ingin menghapus grup "${groupTitle}"?\nSemua log chat, lampiran resource, dan anggota didalamnya akan terhapus secara permanen. Tindakan ini tidak dapat dibatalkan.`,
+      type: "danger",
+      onConfirm: async () => {
+        setSubmitting(true);
+        const result = await deleteStudyGroup(groupId);
+        setSubmitting(false);
+        if (result.error) {
+          alert(result.error);
+        } else {
+          fetchBoardsAndNotes();
+          setConfirmConfig(prev => ({ ...prev, isOpen: false }));
+        }
+      },
+    });
+  };
 
-    setSubmitting(true);
-    const result = await deleteStudyGroup(groupId);
-    setSubmitting(false);
+  const handleLeaveGroup = (
+    e: React.MouseEvent,
+    groupId: string,
+    groupTitle: string,
+  ) => {
+    e.preventDefault();
+    e.stopPropagation();
 
-    if (result.error) {
-      alert(result.error);
-    } else {
-      fetchBoardsAndNotes();
-    }
+    setConfirmConfig({
+      isOpen: true,
+      title: "Keluar dari Grup",
+      message: `Apakah kamu yakin ingin keluar dari grup "${groupTitle}"? Kamu tidak akan bisa melihat diskusi di grup ini lagi kecuali bergabung kembali.`,
+      type: "warning",
+      onConfirm: async () => {
+        setSubmitting(true);
+        const result = await leaveStudyGroup(groupId);
+        setSubmitting(false);
+        if (result.error) {
+          alert(result.error);
+        } else {
+          fetchBoardsAndNotes();
+          setConfirmConfig(prev => ({ ...prev, isOpen: false }));
+        }
+      },
+    });
   };
 
   const parseSubject = (sub: string) => {
@@ -515,7 +567,7 @@ export default function StudyGroupPage() {
                   <div className="w-8 h-8 rounded-full border-4 border-gray-200 border-t-[#38bcfc] animate-spin"></div>
                 </div>
               ) : publicLiveSessions.length === 0 ? (
-                <div className="col-span-1 md:col-span-2 text-center py-8 text-gray-500">
+                <div className="col-span-full text-center py-8 text-gray-500">
                   <p>Belum ada sesi belajar live yang terbuka. Ayo buat grup publik baru!</p>
                 </div>
               ) : (
@@ -573,14 +625,39 @@ export default function StudyGroupPage() {
                       </div>
 
                       {/* Clean Action Button */}
-                      {boards.some((b) => b.id === group.id) ? (
-                        <Link
-                          href={`/dashboard/study-group/${group.id}?title=${encodeURIComponent(group.title)}&type=${group.group_type || "private"}`}
-                          className="w-full text-center bg-gray-50 hover:bg-[#38bcfc] text-gray-700 hover:text-white font-bold py-2.5 px-4 rounded-xl flex items-center justify-center gap-2 transition-all duration-200 border border-gray-100 hover:border-transparent cursor-pointer"
-                        >
-                          <Play size={14} /> Masuk Kelas
-                        </Link>
-                      ) : (
+                      {boards.some((b) => b.id === group.id) ? (() => {
+                        const joinedBoard = boards.find((b) => b.id === group.id);
+                        const isAdmin = joinedBoard?.userRole === "admin";
+                        return (
+                          <div className="flex gap-2 w-full">
+                            <Link
+                              href={`/dashboard/study-group/${group.id}?title=${encodeURIComponent(group.title)}&type=${group.group_type || "private"}`}
+                              className="flex-1 text-center bg-[#38bcfc] hover:bg-[#20a5e8] text-white font-bold py-2.5 px-4 rounded-xl flex items-center justify-center gap-2 transition-all duration-200 cursor-pointer shadow-sm"
+                            >
+                              <Play size={14} /> Masuk Kelas
+                            </Link>
+                            {isAdmin ? (
+                              <button
+                                onClick={(e) => handleDeleteGroup(e, group.id, group.title)}
+                                disabled={submitting}
+                                className="px-3 py-2.5 rounded-xl bg-red-50 hover:bg-red-100 text-red-500 hover:text-red-600 border border-red-100 transition-all cursor-pointer disabled:opacity-50"
+                                title="Hapus grup"
+                              >
+                                <Trash2 size={16} />
+                              </button>
+                            ) : (
+                              <button
+                                onClick={(e) => handleLeaveGroup(e, group.id, group.title)}
+                                disabled={submitting}
+                                className="px-3 py-2.5 rounded-xl bg-red-50 hover:bg-red-100 text-red-500 hover:text-red-600 border border-red-100 transition-all cursor-pointer disabled:opacity-50"
+                                title="Keluar dari grup"
+                              >
+                                <LogOut size={16} />
+                              </button>
+                            )}
+                          </div>
+                        );
+                      })() : (
                         <button
                           onClick={() =>
                             handleJoinDemo(group.group_type, group.id, group.title)
@@ -1063,16 +1140,7 @@ export default function StudyGroupPage() {
 
               <div className="space-y-3">
                 {(() => {
-                  const dummyExplores = [
-                    { id: "dummy-1", title: "Fisika Kuantum Dasar", subject: "general", group_type: "public", profiles: { full_name: "Albert E." } },
-                    { id: "dummy-2", title: "Pemrograman Web Lanjut", subject: "tech", group_type: "public", profiles: { full_name: "Ada L." } },
-                    { id: "dummy-3", title: "Diskusi Ekonomi Makro", subject: "ekonomi", group_type: "private", profiles: { full_name: "Adam S." } },
-                    { id: "dummy-4", title: "Beasiswa Luar Negeri", subject: "general", group_type: "public", profiles: { full_name: "Budi T." } },
-                    { id: "dummy-5", title: "Kalkulus Menengah", subject: "math", group_type: "public", profiles: { full_name: "Isaac N." } },
-                    { id: "dummy-6", title: "Design UI/UX Expert", subject: "design", group_type: "private", profiles: { full_name: "Steve J." } },
-                  ];
-
-                  const combinedAllGroups = [...allGroups, ...dummyExplores];
+                  const combinedAllGroups = [...allGroups];
 
                   let filteredGroups = [];
 
@@ -1136,14 +1204,39 @@ export default function StudyGroupPage() {
                           </div>
                         </div>
 
-                        {isJoined ? (
-                          <Link
-                            href={`/dashboard/study-group/${group.id}?title=${encodeURIComponent(group.title)}&type=${group.group_type || "private"}`}
-                            className="px-4 py-2 rounded-xl text-[13px] font-bold transition-all shadow-sm cursor-pointer whitespace-nowrap mt-2 sm:mt-0 bg-[#38bcfc] hover:bg-[#20a5e8] text-white flex items-center gap-1.5"
-                          >
-                            <Play size={14} /> Masuk Kelas
-                          </Link>
-                        ) : (
+                        {isJoined ? (() => {
+                          const joinedBoard = boards.find((b) => b.id === group.id);
+                          const isAdmin = joinedBoard?.userRole === "admin";
+                          return (
+                            <div className="flex items-center gap-2 mt-2 sm:mt-0">
+                              <Link
+                                href={`/dashboard/study-group/${group.id}?title=${encodeURIComponent(group.title)}&type=${group.group_type || "private"}`}
+                                className="px-4 py-2 rounded-xl text-[13px] font-bold transition-all shadow-sm cursor-pointer whitespace-nowrap bg-[#38bcfc] hover:bg-[#20a5e8] text-white flex items-center gap-1.5"
+                              >
+                                <Play size={14} /> Masuk Kelas
+                              </Link>
+                              {isAdmin ? (
+                                <button
+                                  onClick={(e) => handleDeleteGroup(e, group.id, group.title)}
+                                  disabled={submitting}
+                                  className="p-2 rounded-xl bg-red-50 hover:bg-red-100 text-red-500 hover:text-red-600 border border-red-100 transition-all cursor-pointer disabled:opacity-50"
+                                  title="Hapus grup"
+                                >
+                                  <Trash2 size={14} />
+                                </button>
+                              ) : (
+                                <button
+                                  onClick={(e) => handleLeaveGroup(e, group.id, group.title)}
+                                  disabled={submitting}
+                                  className="p-2 rounded-xl bg-red-50 hover:bg-red-100 text-red-500 hover:text-red-600 border border-red-100 transition-all cursor-pointer disabled:opacity-50"
+                                  title="Keluar dari grup"
+                                >
+                                  <LogOut size={14} />
+                                </button>
+                              )}
+                            </div>
+                          );
+                        })() : (
                           <button
                             onClick={() =>
                               handleJoinDemo(
@@ -1155,7 +1248,7 @@ export default function StudyGroupPage() {
                             className={`px-4 py-2 rounded-xl text-[13px] font-bold transition-all shadow-sm cursor-pointer whitespace-nowrap mt-2 sm:mt-0 ${group.group_type === "public" ? "bg-[#1a1c20] hover:bg-[#2a2c30] text-white shadow-gray-200" : "bg-white border border-gray-200 hover:bg-gray-50 text-[#1a1c20] shadow-sm flex items-center gap-1.5"}`}
                           >
                             {group.group_type === "public" ? (
-                              "Gabung"
+                              "Gabung Sekarang"
                             ) : (
                               <>
                                 <Lock size={14} /> Minta Akses
@@ -1358,6 +1451,52 @@ export default function StudyGroupPage() {
                   </div>
                 </div>
               ))}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* --- PREMIUM CUSTOM CONFIRMATION MODAL --- */}
+      {confirmConfig.isOpen && (
+        <div className="fixed inset-0 bg-gray-900/40 backdrop-blur-md z-[100] flex items-center justify-center p-4 animate-in fade-in duration-300">
+          <div className="bg-white rounded-[32px] shadow-2xl w-full max-w-[420px] overflow-hidden transform animate-in zoom-in-95 duration-300">
+            <div className="p-8 text-center">
+              <div className={cn(
+                "w-20 h-20 rounded-3xl flex items-center justify-center mx-auto mb-6 shadow-lg",
+                confirmConfig.type === "danger" ? "bg-red-50 text-red-500 shadow-red-100" : "bg-amber-50 text-amber-500 shadow-amber-100"
+              )}>
+                {confirmConfig.type === "danger" ? <Trash2 size={36} /> : <LogOut size={36} />}
+              </div>
+              
+              <h2 className="text-[24px] font-bold text-gray-900 mb-3">
+                {confirmConfig.title}
+              </h2>
+              <p className="text-[15px] text-gray-500 leading-relaxed whitespace-pre-wrap">
+                {confirmConfig.message}
+              </p>
+            </div>
+            
+            <div className="flex gap-3 p-6 pt-0">
+              <button
+                onClick={() => setConfirmConfig(prev => ({ ...prev, isOpen: false }))}
+                className="flex-1 py-4 bg-gray-100 hover:bg-gray-200 text-gray-700 font-bold rounded-2xl transition-all cursor-pointer"
+              >
+                Batal
+              </button>
+              <button
+                onClick={confirmConfig.onConfirm}
+                disabled={submitting}
+                className={cn(
+                  "flex-1 py-4 text-white font-bold rounded-2xl transition-all shadow-md flex items-center justify-center gap-2 cursor-pointer",
+                  confirmConfig.type === "danger" ? "bg-red-500 hover:bg-red-600 shadow-red-200" : "bg-amber-500 hover:bg-amber-600 shadow-amber-200"
+                )}
+              >
+                {submitting ? (
+                  <div className="w-5 h-5 border-2 border-white/80 border-t-transparent rounded-full animate-spin"></div>
+                ) : (
+                  "Ya, Lanjutkan"
+                )}
+              </button>
             </div>
           </div>
         </div>

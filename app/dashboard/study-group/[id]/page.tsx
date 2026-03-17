@@ -3,7 +3,12 @@
 import { useState, useEffect, useRef } from "react";
 import { useParams, useSearchParams, useRouter } from "next/navigation";
 import { createClient } from "@/utils/supabase/client";
-import { sendGroupMessage, getNoteContent, summarizeStudyGroup } from "../actions";
+import { clsx, type ClassValue } from "clsx";
+
+function cn(...inputs: ClassValue[]) {
+  return clsx(inputs);
+}
+import { sendGroupMessage, getNoteContent, summarizeStudyGroup, leaveStudyGroup, deleteStudyGroup } from "../actions";
 import ReactMarkdown from "react-markdown";
 import {
   ArrowLeft,
@@ -26,7 +31,9 @@ import {
   ChevronDown,
   Layout,
   CheckSquare,
-  Sparkles
+  Sparkles,
+  LogOut,
+  Trash2
 } from "lucide-react";
 
 // --- Sub-components for Project Board Integration ---
@@ -421,6 +428,23 @@ export default function StudyGroupRoom() {
   const [isLoadingNote, setIsLoadingNote] = useState(false);
   const [isSummarizing, setIsSummarizing] = useState(false);
   const [summaryResult, setSummaryResult] = useState<string | null>(null);
+  const [isLeaving, setIsLeaving] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
+
+  // --- Custom Confirmation Modal State ---
+  const [confirmConfig, setConfirmConfig] = useState<{
+    isOpen: boolean;
+    title: string;
+    message: string;
+    onConfirm: () => void;
+    type: "danger" | "warning";
+  }>({
+    isOpen: false,
+    title: "",
+    message: "",
+    onConfirm: () => {},
+    type: "warning",
+  });
 
   // Supabase
   const supabase = createClient();
@@ -440,6 +464,44 @@ export default function StudyGroupRoom() {
     } else {
       alert(result.error);
     }
+  };
+
+  const handleLeaveGroup = () => {
+    setConfirmConfig({
+      isOpen: true,
+      title: "Keluar dari Grup",
+      message: `Apakah kamu yakin ingin keluar dari grup "${title}"? Kamu tidak akan bisa lagi mengakses riwayat diskusi ini.`,
+      type: "warning",
+      onConfirm: async () => {
+        setIsLeaving(true);
+        const result = await leaveStudyGroup(groupId);
+        setIsLeaving(false);
+        if (result.error) {
+          alert(result.error);
+        } else {
+          router.push("/dashboard/study-group");
+        }
+      },
+    });
+  };
+
+  const handleDeleteGroup = () => {
+    setConfirmConfig({
+      isOpen: true,
+      title: "Hapus Grup Belajar",
+      message: `PERHATIAN: Kamu akan menghapus grup "${title}" secara permanen. Semua data chat dan lampiran akan hilang selamanya.`,
+      type: "danger",
+      onConfirm: async () => {
+        setIsDeleting(true);
+        const result = await deleteStudyGroup(groupId);
+        setIsDeleting(false);
+        if (result.error) {
+          alert(result.error);
+        } else {
+          router.push("/dashboard/study-group");
+        }
+      },
+    });
   };
 
   useEffect(() => {
@@ -714,6 +776,34 @@ export default function StudyGroupRoom() {
             )}
             Rangkum Diskusi
           </button>
+
+          {userRole === "admin" ? (
+            <button
+              onClick={handleDeleteGroup}
+              disabled={isDeleting}
+              className="flex items-center gap-2 px-4 py-2.5 bg-red-50 hover:bg-red-100 text-red-500 hover:text-red-600 text-[13px] font-bold rounded-xl border border-red-100 transition-all cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              {isDeleting ? (
+                <div className="w-4 h-4 border-2 border-red-400 rounded-full border-t-transparent animate-spin"></div>
+              ) : (
+                <Trash2 size={16} />
+              )}
+              Hapus Grup
+            </button>
+          ) : (
+            <button
+              onClick={handleLeaveGroup}
+              disabled={isLeaving}
+              className="flex items-center gap-2 px-4 py-2.5 bg-red-50 hover:bg-red-100 text-red-500 hover:text-red-600 text-[13px] font-bold rounded-xl border border-red-100 transition-all cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              {isLeaving ? (
+                <div className="w-4 h-4 border-2 border-red-400 rounded-full border-t-transparent animate-spin"></div>
+              ) : (
+                <LogOut size={16} />
+              )}
+              Keluar Kelas
+            </button>
+          )}
 
           <div className="w-px h-6 bg-gray-200 mx-1"></div>
           <button
@@ -1213,6 +1303,52 @@ export default function StudyGroupRoom() {
                 className="px-5 py-2.5 rounded-xl bg-[#1a1c20] text-white text-[13px] font-bold hover:bg-[#2a2c30] transition-colors cursor-pointer"
               >
                 Tutup
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* --- PREMIUM CUSTOM CONFIRMATION MODAL --- */}
+      {confirmConfig.isOpen && (
+        <div className="fixed inset-0 bg-gray-900/40 backdrop-blur-md z-[100] flex items-center justify-center p-4 animate-in fade-in duration-300">
+          <div className="bg-white rounded-[32px] shadow-2xl w-full max-w-[420px] overflow-hidden transform animate-in zoom-in-95 duration-300">
+            <div className="p-8 text-center border-b border-gray-50">
+              <div className={cn(
+                "w-20 h-20 rounded-3xl flex items-center justify-center mx-auto mb-6 shadow-lg",
+                confirmConfig.type === "danger" ? "bg-red-50 text-red-500 shadow-red-100" : "bg-amber-50 text-amber-500 shadow-amber-100"
+              )}>
+                {confirmConfig.type === "danger" ? <Trash2 size={36} /> : <LogOut size={36} />}
+              </div>
+              
+              <h2 className="text-[24px] font-bold text-gray-900 mb-2 leading-tight">
+                {confirmConfig.title}
+              </h2>
+              <p className="text-[15px] text-gray-500 leading-relaxed px-2">
+                {confirmConfig.message}
+              </p>
+            </div>
+            
+            <div className="flex gap-3 p-6 bg-gray-50/50">
+              <button
+                onClick={() => setConfirmConfig(prev => ({ ...prev, isOpen: false }))}
+                className="flex-1 py-4 bg-white hover:bg-gray-100 text-gray-700 font-bold rounded-2xl transition-all border border-gray-100 cursor-pointer"
+              >
+                Batal
+              </button>
+              <button
+                onClick={confirmConfig.onConfirm}
+                disabled={isLeaving || isDeleting}
+                className={cn(
+                  "flex-1 py-4 text-white font-bold rounded-2xl transition-all shadow-md flex items-center justify-center gap-2 cursor-pointer",
+                  confirmConfig.type === "danger" ? "bg-red-500 hover:bg-red-600 shadow-red-200" : "bg-amber-500 hover:bg-amber-600 shadow-amber-200"
+                )}
+              >
+                {isLeaving || isDeleting ? (
+                  <div className="w-5 h-5 border-2 border-white/80 border-t-transparent rounded-full animate-spin"></div>
+                ) : (
+                  "Ya, Lanjutkan"
+                )}
               </button>
             </div>
           </div>
