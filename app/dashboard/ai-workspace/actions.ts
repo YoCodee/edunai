@@ -6,7 +6,7 @@ import { createClient } from "@/utils/supabase/server";
 
 export async function processImageWithAI(base64Image: string | string[]) {
   try {
-    const apiKey = "AIzaSyAXzH_tLDjO-53RtCgraA4-FJ9QrOe-bPY";
+    const apiKey = process.env.GOOGLE_AI_API_KEY;
     if (!apiKey) {
       throw new Error("Missing Gemini API Key");
     }
