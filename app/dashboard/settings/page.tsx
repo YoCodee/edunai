@@ -3,10 +3,7 @@
 import { useState } from "react";
 import {
   User,
-  Bell,
   Palette,
-  Shield,
-  CreditCard,
   Paintbrush,
   CheckCircle2,
 } from "lucide-react";
@@ -47,10 +44,7 @@ export default function SettingsPage() {
 
   const tabs = [
     { id: "profile", label: "My Profile", icon: User },
-    { id: "notifications", label: "Notifications", icon: Bell },
     { id: "appearance", label: "Appearance", icon: Palette },
-    { id: "security", label: "Security", icon: Shield },
-    { id: "billing", label: "Billing & Plan", icon: CreditCard },
   ];
 
   return (
@@ -179,69 +173,7 @@ export default function SettingsPage() {
             </div>
           )}
 
-          {activeTab === "notifications" && (
-            <div className="anim-fade-in relative z-10">
-              <h2 className="text-xl font-bold text-gray-900 mb-6">
-                Notification Preferences
-              </h2>
-              <div className="space-y-6 max-w-xl">
-                <div className="flex items-center justify-between p-4 border border-gray-100 rounded-2xl bg-gray-50/50">
-                  <div>
-                    <h4 className="font-bold text-gray-900 text-[15px] mb-1">
-                      AI Task Breakdowns
-                    </h4>
-                    <p className="text-gray-500 text-[13px]">
-                      Get notified when AI finishes analyzing your syllabus.
-                    </p>
-                  </div>
-                  <label className="relative inline-flex items-center cursor-pointer">
-                    <input
-                      type="checkbox"
-                      value=""
-                      className="sr-only peer"
-                      defaultChecked
-                    />
-                    <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-green-500"></div>
-                  </label>
-                </div>
 
-                <div className="flex items-center justify-between p-4 border border-gray-100 rounded-2xl bg-gray-50/50">
-                  <div>
-                    <h4 className="font-bold text-gray-900 text-[15px] mb-1">
-                      Group Project Updates
-                    </h4>
-                    <p className="text-gray-500 text-[13px]">
-                      Alerts for task assignments and list movements.
-                    </p>
-                  </div>
-                  <label className="relative inline-flex items-center cursor-pointer">
-                    <input
-                      type="checkbox"
-                      value=""
-                      className="sr-only peer"
-                      defaultChecked
-                    />
-                    <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-green-500"></div>
-                  </label>
-                </div>
-
-                <div className="flex items-center justify-between p-4 border border-gray-100 rounded-2xl bg-gray-50/50">
-                  <div>
-                    <h4 className="font-bold text-gray-900 text-[15px] mb-1">
-                      Schedule Reminders
-                    </h4>
-                    <p className="text-gray-500 text-[13px]">
-                      Upcoming class and meeting alerts 30 minutes before.
-                    </p>
-                  </div>
-                  <label className="relative inline-flex items-center cursor-pointer">
-                    <input type="checkbox" value="" className="sr-only peer" />
-                    <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-green-500"></div>
-                  </label>
-                </div>
-              </div>
-            </div>
-          )}
 
           {activeTab === "appearance" && (
             <div className="anim-fade-in relative z-10">
@@ -288,24 +220,7 @@ export default function SettingsPage() {
             </div>
           )}
 
-          {(activeTab === "security" || activeTab === "billing") && (
-            <div className="anim-fade-in relative z-10 h-full flex flex-col items-center justify-center py-20">
-              <div className="w-20 h-20 bg-gray-50 border border-gray-100 rounded-full flex items-center justify-center text-gray-300 mb-6 shadow-inner">
-                {activeTab === "security" ? (
-                  <Shield size={32} />
-                ) : (
-                  <CreditCard size={32} />
-                )}
-              </div>
-              <h3 className="text-xl font-bold text-gray-700 mb-2">
-                Module under development
-              </h3>
-              <p className="text-gray-400 text-center max-w-sm">
-                This section is currently being updated to provide you with the
-                best experience.
-              </p>
-            </div>
-          )}
+
         </div>
       </div>
     </div>
