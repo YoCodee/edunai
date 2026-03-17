@@ -18,19 +18,8 @@ export default async function DashboardLayout({
     data: { user },
   } = await supabase.auth.getUser();
 
-  let userFullName = "";
-  if (user) {
-    const { data: profile } = await supabase
-      .from("profiles")
-      .select("full_name")
-      .eq("id", user.id)
-      .single();
-    if (profile) {
-      userFullName = profile.full_name;
-    } else {
-      userFullName = user.user_metadata?.full_name || "Student";
-    }
-  }
+  // Use auth metadata directly — avoids an extra DB query on every navigation
+  const userFullName = user?.user_metadata?.full_name || "Student";
 
   return (
     <ThemeProvider>
