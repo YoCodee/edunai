@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, useCallback } from "react";
 import { format, parseISO } from "date-fns";
 import ReactMarkdown from "react-markdown";
 import clsx from "clsx";
@@ -44,6 +44,7 @@ import {
   Pencil,
   Check,
   GripVertical,
+  AlertTriangle,
 } from "lucide-react";
 
 import {
@@ -106,6 +107,14 @@ export default function AIWorkspaceClient({
   const [isCreatingFolder, setIsCreatingFolder] = useState(false);
   const [newFolderName, setNewFolderName] = useState("");
   const renameInputRef = useRef<HTMLInputElement>(null);
+
+  // ── Delete Modal State ──
+  const [deleteModal, setDeleteModal] = useState<{
+    isOpen: boolean;
+    type: "note" | "folder";
+    id: string;
+    title: string;
+  }>({ isOpen: false, type: "note", id: "", title: "" });
   const newFolderInputRef = useRef<HTMLInputElement>(null);
 
   // ── Search ──
@@ -231,9 +240,12 @@ export default function AIWorkspaceClient({
     setActiveTool("idle");
   };
 
-  const handleDeleteNote = async (id: string, e: React.MouseEvent) => {
+  const openDeleteNoteModal = (note: Note, e: React.MouseEvent) => {
     e.stopPropagation();
-    if (!confirm("Delete this note?")) return;
+    setDeleteModal({ isOpen: true, type: "note", id: note.id, title: note.title });
+  };
+
+  const executeDeleteNote = async (id: string) => {
     const result = await deleteNoteWithResources(id);
     if (result.success) {
       const newNotes = notes.filter((n) => n.id !== id);
@@ -295,17 +307,18 @@ export default function AIWorkspaceClient({
     setRenamingFolderId(null);
   };
 
-  const handleDeleteFolder = async (folderId: string, e: React.MouseEvent) => {
+  const openDeleteFolderModal = (folder: NoteFolder, e: React.MouseEvent) => {
     e.stopPropagation();
-    if (!confirm("Delete this folder? Notes inside will become uncategorized."))
-      return;
+    setDeleteModal({ isOpen: true, type: "folder", id: folder.id, title: folder.name });
+  };
+
+  const executeDeleteFolder = async (folderId: string) => {
     const { error } = await supabase
       .from("note_folders")
       .delete()
       .eq("id", folderId);
     if (!error) {
       setFolders((prev) => prev.filter((f) => f.id !== folderId));
-      // notes with this folder_id become uncategorized (DB handles SET NULL)
       setNotes((prev) =>
         prev.map((n) =>
           n.folder_id === folderId ? { ...n, folder_id: null } : n,
@@ -313,6 +326,15 @@ export default function AIWorkspaceClient({
       );
       if (activeFolderId === folderId) setActiveFolderId("all");
     }
+  };
+
+  const handleConfirmDelete = async () => {
+    if (deleteModal.type === "note") {
+      await executeDeleteNote(deleteModal.id);
+    } else {
+      await executeDeleteFolder(deleteModal.id);
+    }
+    setDeleteModal({ isOpen: false, type: "note", id: "", title: "" });
   };
 
   const toggleFolderExpand = (folderId: string) => {
@@ -462,6 +484,10 @@ export default function AIWorkspaceClient({
         .folder-drop-over { background: #eff6ff !important; }
         .drag-handle { cursor: grab; }
         .drag-handle:active { cursor: grabbing; }
+        @keyframes modal-in { from { opacity:0; transform:scale(.95) translateY(8px); } to { opacity:1; transform:scale(1) translateY(0); } }
+        @keyframes backdrop-in { from { opacity:0; } to { opacity:1; } }
+        .modal-animate { animation: modal-in .2s ease both; }
+        .backdrop-animate { animation: backdrop-in .15s ease both; }
       `}</style>
 
       <div className="w-full min-h-full space-y-6 fade-up">
@@ -729,7 +755,7 @@ export default function AIWorkspaceClient({
                                         </button>
                                         <button
                                           onClick={(e) =>
-                                            handleDeleteFolder(folder.id, e)
+                                            openDeleteFolderModal(folder, e)
                                           }
                                           className="w-5 h-5 flex items-center justify-center rounded text-gray-400 hover:text-red-500 hover:bg-red-50 transition-colors"
                                         >
@@ -880,16 +906,32 @@ export default function AIWorkspaceClient({
                                     <h4 className="font-semibold text-[13px] text-gray-800 truncate pr-4">
                                       {n.title}
                                     </h4>
-                                    <span className="text-[10px] text-gray-300 font-medium mt-0.5 block">
-                                      {format(
-                                        parseISO(n.created_at),
-                                        "MMM d, yyyy",
+                                    <div className="flex items-center gap-2 mt-0.5">
+                                      <span className="text-[10px] text-gray-300 font-medium">
+                                        {format(
+                                          parseISO(n.created_at),
+                                          "MMM d, yyyy",
+                                        )}
+                                      </span>
+                                      {activeFolderId === "all" && n.folder_id && (
+                                        <button
+                                          onClick={(e) => {
+                                            e.stopPropagation();
+                                            setActiveFolderId(n.folder_id!);
+                                            setExpandedFolders((prev) => new Set([...prev, n.folder_id!]));
+                                          }}
+                                          className="inline-flex items-center gap-1 text-[10px] font-semibold text-blue-500 bg-blue-50 hover:bg-blue-100 rounded-full px-2 py-0.5 transition-colors"
+                                          title={`Go to folder: ${folders.find(f => f.id === n.folder_id)?.name}`}
+                                        >
+                                          <Folder size={9} />
+                                          {folders.find(f => f.id === n.folder_id)?.name}
+                                        </button>
                                       )}
-                                    </span>
+                                    </div>
                                   </div>
 
                                   <button
-                                    onClick={(e) => handleDeleteNote(n.id, e)}
+                                    onClick={(e) => openDeleteNoteModal(n, e)}
                                     className="shrink-0 text-gray-300 hover:text-red-400 opacity-0 group-hover:opacity-100 transition-opacity mt-1"
                                   >
                                     <Trash2 size={12} />
@@ -1493,6 +1535,54 @@ export default function AIWorkspaceClient({
           </div>
         </div>
       </div>
+
+      {/* ── DELETE CONFIRMATION MODAL ── */}
+      {deleteModal.isOpen && (
+        <div 
+          className="backdrop-animate fixed inset-0 z-[9999] flex items-center justify-center p-4"
+          style={{ backgroundColor: "rgba(0,0,0,0.4)", backdropFilter: "blur(4px)" }}
+          onClick={() => setDeleteModal({ isOpen: false, type: "note", id: "", title: "" })}
+        >
+          <div 
+            className="modal-animate bg-white rounded-2xl shadow-2xl w-full max-w-[400px] overflow-hidden"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Header with warning icon */}
+            <div className="flex flex-col items-center pt-8 pb-4 px-6">
+              <div className="w-14 h-14 rounded-full bg-red-50 flex items-center justify-center mb-4">
+                <AlertTriangle size={24} className="text-red-500" />
+              </div>
+              <h3 className="text-[17px] font-bold text-gray-900 text-center">
+                Delete {deleteModal.type === "note" ? "Note" : "Folder"}?
+              </h3>
+              <p className="text-[13px] text-gray-500 text-center mt-2 leading-relaxed max-w-[280px]">
+                {deleteModal.type === "note" ? (
+                  <>Are you sure you want to delete <span className="font-semibold text-gray-700">&ldquo;{deleteModal.title}&rdquo;</span>? This action cannot be undone.</>
+                ) : (
+                  <>Are you sure you want to delete the folder <span className="font-semibold text-gray-700">&ldquo;{deleteModal.title}&rdquo;</span>? Notes inside will become uncategorized.</>
+                )}
+              </p>
+            </div>
+
+            {/* Actions */}
+            <div className="flex gap-3 px-6 pb-6 pt-2">
+              <button
+                onClick={() => setDeleteModal({ isOpen: false, type: "note", id: "", title: "" })}
+                className="flex-1 px-4 py-2.5 bg-gray-100 hover:bg-gray-200 text-gray-700 font-bold text-[13px] rounded-xl transition-colors"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleConfirmDelete}
+                className="flex-1 px-4 py-2.5 bg-red-500 hover:bg-red-600 text-white font-bold text-[13px] rounded-xl transition-colors shadow-sm shadow-red-200 flex items-center justify-center gap-2"
+              >
+                <Trash2 size={14} />
+                Delete
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </>
   );
 }
