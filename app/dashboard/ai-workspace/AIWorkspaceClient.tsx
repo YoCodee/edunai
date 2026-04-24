@@ -5,6 +5,12 @@ import { format, parseISO } from "date-fns";
 import ReactMarkdown from "react-markdown";
 import clsx from "clsx";
 import { createClient } from "@/utils/supabase/client";
+import dynamic from "next/dynamic";
+import "@uiw/react-md-editor/markdown-editor.css";
+import "@uiw/react-markdown-preview/markdown.css";
+
+const MDEditor = dynamic(() => import("@uiw/react-md-editor"), { ssr: false });
+
 import {
   DragDropContext,
   Droppable,
@@ -121,7 +127,7 @@ export default function AIWorkspaceClient({
   const [searchQuery, setSearchQuery] = useState("");
 
   // ── Main Layout ──
-  const [mainMode, setMainMode] = useState<"view" | "scan">("view");
+  const [mainMode, setMainMode] = useState<"view" | "scan" | "createManual">("view");
   const [activeNote, setActiveNote] = useState<Note | null>(() => {
     if (selectedNoteId) {
       const note = initialNotes.find((n) => n.id === selectedNoteId);
@@ -129,6 +135,12 @@ export default function AIWorkspaceClient({
     }
     return initialNotes[0] || null;
   });
+
+  // ── Manual Note State ──
+  const [manualNoteTitle, setManualNoteTitle] = useState("");
+  const [manualNoteContent, setManualNoteContent] = useState("");
+  const [isSavingManual, setIsSavingManual] = useState(false);
+  const [editorTab, setEditorTab] = useState<"edit" | "preview">("edit");
 
   // ── Scanner State ──
   const [selectedImages, setSelectedImages] = useState<string[]>([]);
@@ -557,16 +569,29 @@ export default function AIWorkspaceClient({
                 : `${notes.length} note${notes.length > 1 ? "s" : ""} · ${folders.length} folder${folders.length !== 1 ? "s" : ""}`}
             </p>
           </div>
-          <button
-            onClick={() => {
-              setMainMode("scan");
-              setSelectedImages([]);
-              setScannedMarkdown(null);
-            }}
-            className="inline-flex items-center gap-2 px-5 py-2.5 bg-gray-900 text-white rounded-xl text-[13px] font-bold hover:bg-gray-700 transition-all shadow-sm"
-          >
-            <Camera size={14} /> New AI Scan
-          </button>
+          <div className="flex items-center gap-3">
+            <button
+              onClick={() => {
+                setMainMode("createManual");
+                setManualNoteTitle("");
+                setManualNoteContent("");
+                setEditorTab("edit");
+              }}
+              className="inline-flex items-center gap-2 px-5 py-2.5 bg-white text-gray-900 border border-gray-200 rounded-xl text-[13px] font-bold hover:bg-gray-50 transition-all shadow-sm"
+            >
+              <FilePlus size={14} /> Write Note
+            </button>
+            <button
+              onClick={() => {
+                setMainMode("scan");
+                setSelectedImages([]);
+                setScannedMarkdown(null);
+              }}
+              className="inline-flex items-center gap-2 px-5 py-2.5 bg-gray-900 text-white rounded-xl text-[13px] font-bold hover:bg-gray-700 transition-all shadow-sm"
+            >
+              <Camera size={14} /> New AI Scan
+            </button>
+          </div>
         </div>
 
         <div className="h-px bg-gray-100" />
@@ -1199,6 +1224,85 @@ export default function AIWorkspaceClient({
                         </div>
                       </div>
                     )}
+                  </div>
+                </div>
+              ) : mainMode === "createManual" ? (
+                /* ── MANUAL NOTE CREATOR ── */
+                <div className="h-full flex flex-col bg-[#F9FAFB]">
+                  {/* Header */}
+                  <div className="px-8 py-6 border-b border-gray-100 bg-white shrink-0 flex items-center justify-between">
+                    <input
+                      type="text"
+                      placeholder="Note Title"
+                      value={manualNoteTitle}
+                      onChange={(e) => setManualNoteTitle(e.target.value)}
+                      className="text-[24px] font-black text-gray-900 bg-transparent border-none outline-none w-full placeholder:text-gray-300"
+                    />
+                  </div>
+
+                  {/* Content Area */}
+                  <div className="flex-1 custom-scrollbar flex flex-col bg-white" data-color-mode="light">
+                    <MDEditor
+                      value={manualNoteContent}
+                      onChange={(val) => setManualNoteContent(val || "")}
+                      height="100%"
+                      className="flex-1 w-full border-none !shadow-none"
+                      preview="live"
+                      textareaProps={{
+                        placeholder: "Write your note here using Markdown...",
+                      }}
+                      style={{ borderRadius: 0, height: '100%', display: 'flex', flexDirection: 'column' }}
+                    />
+                  </div>
+
+                  {/* Footer Actions */}
+                  <div className="px-8 py-5 border-t border-gray-100 bg-white shrink-0 flex items-center justify-between">
+                    <button
+                      onClick={() => setMainMode("view")}
+                      className="px-5 py-2.5 bg-gray-50 hover:bg-gray-100 text-gray-600 font-bold text-[13px] rounded-xl transition-colors"
+                    >
+                      Cancel
+                    </button>
+                    <button
+                      onClick={async () => {
+                        if (!manualNoteTitle.trim() || !manualNoteContent.trim()) {
+                          // Simple form validation warning (optional: could use toast)
+                          alert("Please fill in both title and content!");
+                          return;
+                        }
+                        setIsSavingManual(true);
+                        const res = await saveGeneratedNote(manualNoteTitle, manualNoteContent, ["Manual Note"]);
+                        if (res.success) {
+                          setMainMode("view");
+                          setManualNoteTitle("");
+                          setManualNoteContent("");
+                          setEditorTab("edit");
+                          
+                          // Set it as active after saving (fetchNotes gives updated list, activeNote selection needs updated data)
+                          await fetchNotes(); 
+                          if (res.data) {
+                            setActiveNote(res.data);
+                          }
+                        } else {
+                          alert("Failed to save note");
+                        }
+                        setIsSavingManual(false);
+                      }}
+                      disabled={isSavingManual || !manualNoteTitle.trim() || !manualNoteContent.trim()}
+                      className="px-6 py-2.5 bg-gray-900 hover:bg-gray-700 text-white font-bold text-[13px] rounded-xl transition-colors shadow-sm flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      {isSavingManual ? (
+                        <>
+                          <Loader2 size={14} className="animate-spin" />
+                          Saving...
+                        </>
+                      ) : (
+                        <>
+                          <Save size={14} />
+                          Save Note
+                        </>
+                      )}
+                    </button>
                   </div>
                 </div>
               ) : (

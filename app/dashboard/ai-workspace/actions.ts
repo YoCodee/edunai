@@ -64,6 +64,7 @@ Tugas kamu adalah:
 export async function saveGeneratedNote(
   title: string,
   markdownContent: string,
+  tags: string[] = ["AI-Generated", "Scanner"]
 ) {
   const supabase = await createClient();
   const {
@@ -81,7 +82,7 @@ export async function saveGeneratedNote(
         user_id: user.id,
         title: title,
         content_markdown: markdownContent,
-        tags: ["AI-Generated", "Scanner"],
+        tags: tags,
       },
     ])
     .select()
