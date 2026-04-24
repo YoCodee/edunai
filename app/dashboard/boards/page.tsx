@@ -11,6 +11,9 @@ import {
   MoreVertical,
   LogOut,
   FolderOpen,
+  X,
+  AlertTriangle,
+  Loader2,
 } from "lucide-react";
 import { createBoard, joinBoardViaCode } from "./actions";
 import Link from "next/link";
@@ -28,6 +31,9 @@ export default function ProjectBoardsOverview() {
   // Join Modal
   const [isJoinModalOpen, setIsJoinModalOpen] = useState(false);
   const [joinCodeInput, setJoinCodeInput] = useState("");
+
+  const [formError, setFormError] = useState<string | null>(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const supabase = createClient();
 
@@ -74,31 +80,47 @@ export default function ProjectBoardsOverview() {
 
   const handleCreate = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!newTitle) return;
+    setFormError(null);
+    if (!newTitle.trim()) {
+      setFormError("Board name is required");
+      return;
+    }
 
+    setIsSubmitting(true);
     const result = await createBoard(newTitle, newDesc);
     if (result.error) {
-      alert(result.error);
+      setFormError(result.error);
     } else {
       setIsCreateModalOpen(false);
       setNewTitle("");
       setNewDesc("");
       fetchBoards();
     }
+    setIsSubmitting(false);
   };
 
   const handleJoin = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!joinCodeInput) return;
+    setFormError(null);
+    if (!joinCodeInput.trim()) {
+      setFormError("Please enter an access code");
+      return;
+    }
+    if (joinCodeInput.length < 6) {
+      setFormError("Code must be 6 characters long");
+      return;
+    }
 
+    setIsSubmitting(true);
     const result = await joinBoardViaCode(joinCodeInput);
     if (result.error) {
-      alert(result.error);
+      setFormError(result.error);
     } else {
       setIsJoinModalOpen(false);
       setJoinCodeInput("");
       fetchBoards();
     }
+    setIsSubmitting(false);
   };
 
   return (
@@ -222,10 +244,13 @@ export default function ProjectBoardsOverview() {
                 Create New Project Board
               </h2>
               <button
-                onClick={() => setIsCreateModalOpen(false)}
+                onClick={() => {
+                  setIsCreateModalOpen(false);
+                  setFormError(null);
+                }}
                 className="p-2 text-gray-400 hover:text-gray-900 rounded-full hover:bg-gray-100 transition-colors"
               >
-                X
+                <X size={20} />
               </button>
             </div>
 
@@ -238,7 +263,10 @@ export default function ProjectBoardsOverview() {
                   type="text"
                   required
                   value={newTitle}
-                  onChange={(e) => setNewTitle(e.target.value)}
+                  onChange={(e) => {
+                    setNewTitle(e.target.value);
+                    setFormError(null);
+                  }}
                   className="w-full bg-[#f8f9fc] border border-gray-200 text-gray-900 text-[14px] rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-[#38bcfc]/50 focus:border-[#38bcfc] transition-all font-medium"
                   placeholder="e.g. History Thesis Group"
                 />
@@ -257,9 +285,26 @@ export default function ProjectBoardsOverview() {
                 />
               </div>
 
+               {formError && (
+                <div className="bg-red-50 border border-red-100 text-red-600 text-[12px] font-bold px-4 py-2.5 rounded-xl flex items-center gap-2 mb-1">
+                  <AlertTriangle size={14} />
+                  {formError}
+                </div>
+              )}
+
               <div className="mt-8">
-                <button className="w-full bg-[#1a1c20] hover:bg-[#2a2c30] text-white font-bold tracking-wide rounded-xl py-4 transition-all shadow-md mt-2">
-                  Initialize Board Setup
+                <button 
+                  disabled={isSubmitting}
+                  className="w-full bg-[#1a1c20] hover:bg-[#2a2c30] text-white font-bold tracking-wide rounded-xl py-4 transition-all shadow-md mt-2 disabled:opacity-70 flex items-center justify-center gap-2"
+                >
+                  {isSubmitting ? (
+                    <>
+                      <Loader2 size={18} className="animate-spin" />
+                      Creating...
+                    </>
+                  ) : (
+                    "Initialize Board Setup"
+                  )}
                 </button>
               </div>
             </form>
@@ -288,23 +333,43 @@ export default function ProjectBoardsOverview() {
                 required
                 maxLength={6}
                 value={joinCodeInput}
-                onChange={(e) => setJoinCodeInput(e.target.value.toUpperCase())}
+                onChange={(e) => {
+                  setJoinCodeInput(e.target.value.toUpperCase());
+                  setFormError(null);
+                }}
                 className="w-full bg-gray-50 border border-gray-200 text-gray-900 text-[24px] text-center tracking-[0.5em] font-bold rounded-2xl px-4 py-4 focus:outline-none focus:ring-2 focus:ring-[#38bcfc]/50 focus:border-[#38bcfc] uppercase shadow-inner"
                 placeholder="XXXXXX"
               />
+              {formError && (
+                <div className="bg-red-50 border border-red-100 text-red-600 text-[12px] font-bold px-4 py-2.5 rounded-xl flex items-center justify-center gap-2 mt-4">
+                  <AlertTriangle size={14} />
+                  {formError}
+                </div>
+              )}
               <div className="flex gap-3 pt-4">
                 <button
                   type="button"
-                  onClick={() => setIsJoinModalOpen(false)}
+                  onClick={() => {
+                    setIsJoinModalOpen(false);
+                    setFormError(null);
+                  }}
                   className="flex-1 py-3 text-gray-500 font-semibold hover:bg-gray-50 rounded-xl transition-colors"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
-                  className="flex-[2] py-3 bg-[#1a1c20] text-white font-bold rounded-xl shadow-lg hover:shadow-xl hover:bg-black transition-all"
+                  disabled={isSubmitting}
+                  className="flex-[2] py-3 bg-[#1a1c20] text-white font-bold rounded-xl shadow-lg hover:shadow-xl hover:bg-black transition-all disabled:opacity-70 flex items-center justify-center gap-2"
                 >
-                  Submit Code
+                  {isSubmitting ? (
+                    <>
+                      <Loader2 size={16} className="animate-spin" />
+                      Joining...
+                    </>
+                  ) : (
+                    "Submit Code"
+                  )}
                 </button>
               </div>
             </form>

@@ -6,6 +6,7 @@ import {
   Palette,
   Paintbrush,
   CheckCircle2,
+  AlertTriangle,
 } from "lucide-react";
 import clsx from "clsx";
 import { useTheme } from "@/components/ui/ThemeContext";
@@ -39,8 +40,40 @@ function ColorField({ label, value, onChange }: { label: string, value: string, 
 }
 
 export default function SettingsPage() {
-  const [activeTab, setActiveTab] = useState("appearance");
+  const [activeTab, setActiveTab] = useState("profile");
   const { colors, updateColor, resetToDefault } = useTheme();
+
+  const [profile, setProfile] = useState({
+    firstName: "Student",
+    lastName: "User",
+    university: "",
+  });
+  const [profileError, setProfileError] = useState<string | null>(null);
+  const [isSavingProfile, setIsSavingProfile] = useState(false);
+  const [saveSuccess, setSaveSuccess] = useState(false);
+
+  const handleSaveProfile = async () => {
+    setProfileError(null);
+    setSaveSuccess(false);
+
+    if (!profile.firstName.trim()) {
+      setProfileError("First name is required");
+      return;
+    }
+    if (!profile.lastName.trim()) {
+      setProfileError("Last name is required");
+      return;
+    }
+
+    setIsSavingProfile(true);
+    // Simulate API call
+    await new Promise((resolve) => setTimeout(resolve, 1000));
+    setIsSavingProfile(false);
+    setSaveSuccess(true);
+    
+    // Hide success message after 3 seconds
+    setTimeout(() => setSaveSuccess(false), 3000);
+  };
 
   const tabs = [
     { id: "profile", label: "My Profile", icon: User },
@@ -125,7 +158,11 @@ export default function SettingsPage() {
                     </label>
                     <input
                       type="text"
-                      defaultValue="Student"
+                      value={profile.firstName}
+                      onChange={(e) => {
+                        setProfile({ ...profile, firstName: e.target.value });
+                        setProfileError(null);
+                      }}
                       className="w-full bg-gray-50 border border-gray-200 text-gray-900 text-[14px] rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-blue-500/30 focus:border-blue-500 font-medium transition-all"
                     />
                   </div>
@@ -135,7 +172,11 @@ export default function SettingsPage() {
                     </label>
                     <input
                       type="text"
-                      defaultValue="User"
+                      value={profile.lastName}
+                      onChange={(e) => {
+                        setProfile({ ...profile, lastName: e.target.value });
+                        setProfileError(null);
+                      }}
                       className="w-full bg-gray-50 border border-gray-200 text-gray-900 text-[14px] rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-blue-500/30 focus:border-blue-500 font-medium transition-all"
                     />
                   </div>
@@ -160,13 +201,45 @@ export default function SettingsPage() {
                   <input
                     type="text"
                     placeholder="e.g. Stanford University"
+                    value={profile.university}
+                    onChange={(e) => {
+                      setProfile({ ...profile, university: e.target.value });
+                      setProfileError(null);
+                    }}
                     className="w-full bg-gray-50 border border-gray-200 text-gray-900 text-[14px] rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-blue-500/30 focus:border-blue-500 font-medium transition-all"
                   />
                 </div>
 
+                {profileError && (
+                  <div className="bg-red-50 border border-red-100 text-red-600 text-[12px] font-bold px-4 py-2.5 rounded-xl flex items-center gap-2 mt-2">
+                    <AlertTriangle size={14} />
+                    {profileError}
+                  </div>
+                )}
+
+                {saveSuccess && (
+                  <div className="bg-emerald-50 border border-emerald-100 text-emerald-600 text-[12px] font-bold px-4 py-2.5 rounded-xl flex items-center gap-2 mt-2">
+                    <CheckCircle2 size={14} />
+                    Changes saved successfully!
+                  </div>
+                )}
+
                 <div className="pt-4 border-t border-gray-100 mt-8">
-                  <button className="px-6 py-3 bg-[#1a1c20] hover:bg-black text-white font-bold rounded-xl transition-colors shadow-lg shadow-gray-200 flex items-center gap-2">
-                    <CheckCircle2 size={18} /> Save Changes
+                  <button
+                    onClick={handleSaveProfile}
+                    disabled={isSavingProfile}
+                    className="px-6 py-3 bg-[#1a1c20] hover:bg-black text-white font-bold rounded-xl transition-all shadow-lg shadow-gray-200 flex items-center gap-2 disabled:opacity-50"
+                  >
+                    {isSavingProfile ? (
+                      <>
+                        <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                        Saving...
+                      </>
+                    ) : (
+                      <>
+                        <CheckCircle2 size={18} /> Save Changes
+                      </>
+                    )}
                   </button>
                 </div>
               </div>

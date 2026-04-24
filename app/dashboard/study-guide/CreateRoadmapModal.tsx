@@ -277,7 +277,10 @@ export default function CreateRoadmapModal({
               <input
                 type="text"
                 value={title}
-                onChange={(e) => setTitle(e.target.value)}
+                onChange={(e) => {
+                  setTitle(e.target.value);
+                  setError(null);
+                }}
                 placeholder={
                   activeTab === "ai-topic"
                     ? "Contoh: Belajar Python untuk Pemula"
@@ -296,7 +299,10 @@ export default function CreateRoadmapModal({
                 </label>
                 <textarea
                   value={description}
-                  onChange={(e) => setDescription(e.target.value)}
+                  onChange={(e) => {
+                    setDescription(e.target.value);
+                    setError(null);
+                  }}
                   placeholder="Deskripsi singkat tentang roadmap ini..."
                   rows={2}
                   className="w-full px-4 py-2.5 rounded-xl border border-gray-200 text-[14px] focus:border-gray-900 focus:ring-2 focus:ring-gray-100 outline-none transition-all resize-none"

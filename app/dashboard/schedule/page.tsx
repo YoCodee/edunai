@@ -127,6 +127,8 @@ export default function SmartSchedulerPage() {
     color: "blue",
   });
 
+  const [formError, setFormError] = useState<string | null>(null);
+
   // Calendar
   const startDate = startOfWeek(currentDate, { weekStartsOn: 1 });
   const weekDays = [...Array(7)].map((_, i) => addDays(startDate, i));
@@ -222,9 +224,19 @@ export default function SmartSchedulerPage() {
   /* ── Submit Form ── */
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setIsSubmitting(true);
+    setFormError(null);
 
     if (modalMode === "single") {
+      if (!singleEvent.title.trim()) {
+        setFormError("Please enter an event title");
+        return;
+      }
+      if (singleEvent.startTime >= singleEvent.endTime) {
+        setFormError("Start time must be before end time");
+        return;
+      }
+
+      setIsSubmitting(true);
       const result = await addSingleEvent({
         title: singleEvent.title,
         location: singleEvent.location,
@@ -252,9 +264,19 @@ export default function SmartSchedulerPage() {
           await requestNotifPermission();
         }
       } else {
-        alert(result.error);
+        setFormError(result.error || "Failed to add event");
       }
     } else {
+      if (!fixedClass.title.trim()) {
+        setFormError("Please enter a class title");
+        return;
+      }
+      if (fixedClass.startTime >= fixedClass.endTime) {
+        setFormError("Start time must be before end time");
+        return;
+      }
+
+      setIsSubmitting(true);
       const result = await addFixedClass({
         title: fixedClass.title,
         location: fixedClass.location,
@@ -269,7 +291,7 @@ export default function SmartSchedulerPage() {
         await fetchEvents();
         setFixedClass({ ...fixedClass, title: "", location: "" });
       } else {
-        alert(result.error);
+        setFormError(result.error || "Failed to add weekly classes");
       }
     }
 
@@ -749,7 +771,10 @@ export default function SmartSchedulerPage() {
             {/* Mode toggle */}
             <div className="flex bg-gray-50/80 p-2 mx-6 mt-6 rounded-[16px] border border-gray-100">
               <button
-                onClick={() => setModalMode("single")}
+                onClick={() => {
+                  setModalMode("single");
+                  setFormError(null);
+                }}
                 className={clsx(
                   "flex-1 py-2.5 text-[14px] font-bold rounded-xl transition-all",
                   modalMode === "single"
@@ -760,7 +785,10 @@ export default function SmartSchedulerPage() {
                 Single Event
               </button>
               <button
-                onClick={() => setModalMode("recurring")}
+                onClick={() => {
+                  setModalMode("recurring");
+                  setFormError(null);
+                }}
                 className={clsx(
                   "flex-1 py-2.5 text-[14px] font-bold rounded-xl transition-all",
                   modalMode === "recurring"
@@ -786,12 +814,13 @@ export default function SmartSchedulerPage() {
                         type="text"
                         required
                         value={singleEvent.title}
-                        onChange={(e) =>
+                        onChange={(e) => {
                           setSingleEvent({
                             ...singleEvent,
                             title: e.target.value,
-                          })
-                        }
+                          });
+                          setFormError(null);
+                        }}
                         className="w-full bg-[#f8f9fc] border border-gray-200 text-gray-900 text-[14px] rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-[#38bcfc]/50 focus:border-[#38bcfc]"
                         placeholder="e.g. Algorithm Midterm"
                       />
@@ -977,9 +1006,10 @@ export default function SmartSchedulerPage() {
                       type="text"
                       required
                       value={fixedClass.title}
-                      onChange={(e) =>
-                        setFixedClass({ ...fixedClass, title: e.target.value })
-                      }
+                      onChange={(e) => {
+                        setFixedClass({ ...fixedClass, title: e.target.value });
+                        setFormError(null);
+                      }}
                       className="w-full bg-[#f8f9fc] border border-gray-200 text-gray-900 text-[14px] rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-[#38bcfc]/50 focus:border-[#38bcfc]"
                       placeholder="e.g. Physics 101 Lecture"
                     />
@@ -1083,32 +1113,40 @@ export default function SmartSchedulerPage() {
               )}
 
               {/* Actions */}
-              <div className="pt-2 flex gap-3">
-                <button
-                  type="button"
-                  onClick={() => setIsModalOpen(false)}
-                  className="flex-1 px-4 py-3.5 rounded-xl border border-gray-200 text-gray-700 font-bold text-[14px] hover:bg-gray-50 transition-colors"
-                >
-                  Cancel
-                </button>
-                <button
-                  type="submit"
-                  disabled={isSubmitting}
-                  className="flex-[2] py-3.5 rounded-xl transition-all flex items-center justify-center font-bold text-[14px] disabled:opacity-70 disabled:cursor-not-allowed shadow-md text-white bg-[#38bcfc] hover:bg-[#20aaf0]"
-                >
-                  {isSubmitting ? (
-                    <Loader2 className="w-5 h-5 animate-spin" />
-                  ) : modalMode === "single" ? (
-                    <>
-                      <CheckCircle2 size={16} className="mr-2" />
-                      {singleEvent.reminderMinutes > 0
-                        ? "Save with Reminder"
-                        : "Save Event"}
-                    </>
-                  ) : (
-                    "Setup Semester Schedule"
-                  )}
-                </button>
+              <div className="pt-2 flex flex-col gap-3">
+                {formError && (
+                  <div className="bg-red-50 border border-red-100 text-red-600 text-[12px] font-bold px-4 py-2.5 rounded-xl flex items-center gap-2 mb-1">
+                    <AlertTriangle size={14} />
+                    {formError}
+                  </div>
+                )}
+                <div className="flex gap-3">
+                  <button
+                    type="button"
+                    onClick={() => setIsModalOpen(false)}
+                    className="flex-1 px-4 py-3.5 rounded-xl border border-gray-200 text-gray-700 font-bold text-[14px] hover:bg-gray-50 transition-colors"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="submit"
+                    disabled={isSubmitting}
+                    className="flex-[2] py-3.5 rounded-xl transition-all flex items-center justify-center font-bold text-[14px] disabled:opacity-70 disabled:cursor-not-allowed shadow-md text-white bg-[#38bcfc] hover:bg-[#20aaf0]"
+                  >
+                    {isSubmitting ? (
+                      <Loader2 className="w-5 h-5 animate-spin" />
+                    ) : modalMode === "single" ? (
+                      <>
+                        <CheckCircle2 size={16} className="mr-2" />
+                        {singleEvent.reminderMinutes > 0
+                          ? "Save with Reminder"
+                          : "Save Event"}
+                      </>
+                    ) : (
+                      "Setup Semester Schedule"
+                    )}
+                  </button>
+                </div>
               </div>
             </form>
           </div>

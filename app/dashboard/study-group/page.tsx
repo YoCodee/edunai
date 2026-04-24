@@ -172,6 +172,7 @@ export default function StudyGroupPage() {
   const [joinCodeInput, setJoinCodeInput] = useState("");
   const [isJoinPrivateModalOpen, setIsJoinPrivateModalOpen] = useState(false);
   const [submitting, setSubmitting] = useState(false);
+  const [modalError, setModalError] = useState<string | null>(null);
 
   // --- Custom Confirmation Modal State ---
   const [confirmConfig, setConfirmConfig] = useState<{
@@ -961,7 +962,10 @@ export default function StudyGroupPage() {
                 Buat Grup Baru
               </h2>
               <button
-                onClick={() => setIsCreateModalOpen(false)}
+                onClick={() => {
+                  setIsCreateModalOpen(false);
+                  setModalError(null);
+                }}
                 className="p-2 text-gray-400 hover:text-gray-900 rounded-full hover:bg-gray-100 transition-colors cursor-pointer"
               >
                 <X size={20} />
@@ -1084,18 +1088,25 @@ export default function StudyGroupPage() {
                 </div>
               </div>
 
-              <div className="mt-8 pt-4">
-                <button
-                  disabled={submitting}
-                  className="w-full bg-[#1a1c20] hover:bg-[#2a2c30] text-white font-bold tracking-wide rounded-xl py-4 transition-all shadow-md shadow-gray-200 cursor-pointer disabled:opacity-70 flex justify-center items-center gap-2"
-                >
-                  {submitting ? (
-                    <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-                  ) : (
-                    "Buat Sekarang"
-                  )}
-                </button>
-              </div>
+                {modalError && (
+                  <div className="bg-red-50 border border-red-100 text-red-600 text-[12px] font-bold px-4 py-2.5 rounded-xl flex items-center gap-2 mb-4">
+                    <AlertTriangle size={14} />
+                    {modalError}
+                  </div>
+                )}
+
+                <div className="mt-4 pt-4">
+                  <button
+                    disabled={submitting}
+                    className="w-full bg-[#1a1c20] hover:bg-[#2a2c30] text-white font-bold tracking-wide rounded-xl py-4 transition-all shadow-md shadow-gray-200 cursor-pointer disabled:opacity-70 flex justify-center items-center gap-2"
+                  >
+                    {submitting ? (
+                      <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                    ) : (
+                      "Buat Sekarang"
+                    )}
+                  </button>
+                </div>
             </form>
           </div>
         </div>
@@ -1280,7 +1291,10 @@ export default function StudyGroupPage() {
         <div className="fixed inset-0 bg-gray-900/50 backdrop-blur-sm z-[60] flex items-center justify-center p-4">
           <div className="bg-white rounded-[32px] shadow-2xl w-full max-w-[450px] overflow-hidden text-center p-10 relative">
             <button
-              onClick={() => setIsJoinPrivateModalOpen(false)}
+              onClick={() => {
+                setIsJoinPrivateModalOpen(false);
+                setModalError(null);
+              }}
               className="absolute top-4 right-4 p-2 text-gray-400 hover:text-gray-900 rounded-full hover:bg-gray-100 transition-colors cursor-pointer"
             >
               <X size={20} />
@@ -1296,26 +1310,35 @@ export default function StudyGroupPage() {
             </p>
 
             <form onSubmit={handleJoinPrivate} className="space-y-5">
-              <input
-                type="text"
-                required
-                maxLength={6}
-                value={joinCodeInput}
-                onChange={(e) => setJoinCodeInput(e.target.value.toUpperCase())}
-                className="w-full bg-gray-50 border border-gray-200 text-gray-900 text-[24px] text-center tracking-[0.5em] font-bold rounded-2xl px-4 py-4 focus:outline-none focus:ring-2 focus:ring-[#38bcfc]/50 focus:border-[#38bcfc] uppercase shadow-inner"
-                placeholder="XXXXXX"
-              />
-              <button
-                type="submit"
-                disabled={submitting}
-                className="w-full py-3.5 bg-[#1a1c20] text-white font-bold rounded-xl shadow-lg hover:shadow-xl hover:bg-black transition-all disabled:opacity-70 flex justify-center cursor-pointer"
-              >
-                {submitting ? (
-                  <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-                ) : (
-                  "Submit Kode"
+                <input
+                  type="text"
+                  required
+                  maxLength={6}
+                  value={joinCodeInput}
+                  onChange={(e) => {
+                    setJoinCodeInput(e.target.value.toUpperCase());
+                    setModalError(null);
+                  }}
+                  className="w-full bg-gray-50 border border-gray-200 text-gray-900 text-[24px] text-center tracking-[0.5em] font-bold rounded-2xl px-4 py-4 focus:outline-none focus:ring-2 focus:ring-[#38bcfc]/50 focus:border-[#38bcfc] uppercase shadow-inner"
+                  placeholder="XXXXXX"
+                />
+                {modalError && (
+                  <div className="bg-red-50 border border-red-100 text-red-600 text-[12px] font-bold px-4 py-2.5 rounded-xl flex items-center justify-center gap-2 mb-4">
+                    <AlertTriangle size={14} />
+                    {modalError}
+                  </div>
                 )}
-              </button>
+                <button
+                  type="submit"
+                  disabled={submitting}
+                  className="w-full py-3.5 bg-[#1a1c20] text-white font-bold rounded-xl shadow-lg hover:shadow-xl hover:bg-black transition-all disabled:opacity-70 flex justify-center cursor-pointer"
+                >
+                  {submitting ? (
+                    <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                  ) : (
+                    "Submit Kode"
+                  )}
+                </button>
             </form>
           </div>
         </div>
