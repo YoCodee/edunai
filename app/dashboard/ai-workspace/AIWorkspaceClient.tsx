@@ -141,6 +141,7 @@ export default function AIWorkspaceClient({
   const [manualNoteTitle, setManualNoteTitle] = useState("");
   const [manualNoteContent, setManualNoteContent] = useState("");
   const [isSavingManual, setIsSavingManual] = useState(false);
+  const [manualNoteError, setManualNoteError] = useState<string | null>(null);
   const [editingNoteId, setEditingNoteId] = useState<string | null>(null);
   const [editorTab, setEditorTab] = useState<"edit" | "preview">("edit");
 
@@ -1239,7 +1240,10 @@ export default function AIWorkspaceClient({
                       type="text"
                       placeholder="Note Title"
                       value={manualNoteTitle}
-                      onChange={(e) => setManualNoteTitle(e.target.value)}
+                      onChange={(e) => {
+                        setManualNoteTitle(e.target.value);
+                        setManualNoteError(null);
+                      }}
                       className="text-[24px] font-black text-gray-900 bg-transparent border-none outline-none w-full placeholder:text-gray-300"
                     />
                   </div>
@@ -1248,7 +1252,10 @@ export default function AIWorkspaceClient({
                   <div className="flex-1 custom-scrollbar flex flex-col bg-white" data-color-mode="light">
                     <MDEditor
                       value={manualNoteContent}
-                      onChange={(val) => setManualNoteContent(val || "")}
+                      onChange={(val) => {
+                        setManualNoteContent(val || "");
+                        setManualNoteError(null);
+                      }}
                       height="100%"
                       className="flex-1 w-full border-none !shadow-none"
                       preview="live"
@@ -1269,10 +1276,15 @@ export default function AIWorkspaceClient({
                     </button>
                     <button
                       onClick={async () => {
-                        if (!manualNoteTitle.trim() || !manualNoteContent.trim()) {
-                          alert("Please fill in both title and content!");
+                        if (!manualNoteTitle.trim()) {
+                          setManualNoteError("Please enter a note title");
                           return;
                         }
+                        if (!manualNoteContent.trim()) {
+                          setManualNoteError("Please enter some content for your note");
+                          return;
+                        }
+                        setManualNoteError(null);
                         setIsSavingManual(true);
                         let res;
                         if (mainMode === "editManual" && editingNoteId) {
@@ -1293,11 +1305,11 @@ export default function AIWorkspaceClient({
                             setActiveNote(res.data);
                           }
                         } else {
-                          alert("Failed to save note");
+                          setManualNoteError("Failed to save note. Please try again.");
                         }
                         setIsSavingManual(false);
                       }}
-                      disabled={isSavingManual || !manualNoteTitle.trim() || !manualNoteContent.trim()}
+                      disabled={isSavingManual}
                       className="px-6 py-2.5 bg-gray-900 hover:bg-gray-700 text-white font-bold text-[13px] rounded-xl transition-colors shadow-sm flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
                     >
                       {isSavingManual ? (
@@ -1313,6 +1325,14 @@ export default function AIWorkspaceClient({
                       )}
                     </button>
                   </div>
+                  {manualNoteError && (
+                    <div className="px-8 pb-4">
+                      <div className="bg-red-50 border border-red-100 text-red-600 text-[12px] font-bold px-4 py-2 rounded-xl flex items-center gap-2">
+                        <AlertTriangle size={14} />
+                        {manualNoteError}
+                      </div>
+                    </div>
+                  )}
                 </div>
               ) : (
                 /* VIEWER */

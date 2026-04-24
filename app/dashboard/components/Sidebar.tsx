@@ -109,7 +109,9 @@ export default function Sidebar() {
           <ul className="space-y-1.5">
             {primaryLinks.map((link) => {
               const Icon = link.icon;
-              const isActive = pathname === link.href;
+              const isActive = link.href === "/dashboard" 
+                ? pathname === "/dashboard" 
+                : pathname.startsWith(link.href);
               return (
                 <li key={link.name} id={link.id}>
                   <Link
@@ -165,9 +167,17 @@ export default function Sidebar() {
           <li id="sidebar-settings">
             <Link
               href="/dashboard/settings"
-              className="flex items-center gap-3 px-3 py-2 rounded-xl text-[14px] font-medium text-dash-text-secondary hover:text-dash-text-primary hover:bg-dash-surface transition-all"
+              className={clsx(
+                "flex items-center gap-3 px-3 py-2 rounded-xl text-[14px] font-medium transition-all",
+                pathname.startsWith("/dashboard/settings")
+                  ? "bg-dash-surface text-dash-primary border border-dash-border font-bold"
+                  : "text-dash-text-secondary hover:text-dash-text-primary hover:bg-dash-surface"
+              )}
             >
-              <Settings size={18} className="opacity-70" /> Settings
+              <Settings size={18} className={clsx(
+                "transition-colors",
+                pathname.startsWith("/dashboard/settings") ? "text-dash-primary" : "opacity-70"
+              )} /> Settings
             </Link>
           </li>
           <li>
