@@ -56,6 +56,7 @@ import {
 import {
   processImageWithAI,
   saveGeneratedNote,
+  updateGeneratedNote,
   deleteNoteWithResources,
 } from "./actions";
 import { generateStudyMaterial } from "./assistant-actions";
@@ -127,7 +128,7 @@ export default function AIWorkspaceClient({
   const [searchQuery, setSearchQuery] = useState("");
 
   // ── Main Layout ──
-  const [mainMode, setMainMode] = useState<"view" | "scan" | "createManual">("view");
+  const [mainMode, setMainMode] = useState<"view" | "scan" | "createManual" | "editManual">("view");
   const [activeNote, setActiveNote] = useState<Note | null>(() => {
     if (selectedNoteId) {
       const note = initialNotes.find((n) => n.id === selectedNoteId);
@@ -140,6 +141,7 @@ export default function AIWorkspaceClient({
   const [manualNoteTitle, setManualNoteTitle] = useState("");
   const [manualNoteContent, setManualNoteContent] = useState("");
   const [isSavingManual, setIsSavingManual] = useState(false);
+  const [editingNoteId, setEditingNoteId] = useState<string | null>(null);
   const [editorTab, setEditorTab] = useState<"edit" | "preview">("edit");
 
   // ── Scanner State ──
@@ -168,6 +170,7 @@ export default function AIWorkspaceClient({
   const [flashcardIndex, setFlashcardIndex] = useState(0);
   const [isFlipped, setIsFlipped] = useState(false);
   const [quizScore, setQuizScore] = useState<number | null>(null);
+  const [currentQuizIndex, setCurrentQuizIndex] = useState(0);
   const [userAnswers, setUserAnswers] = useState<any>({});
 
   // ── Auto-focus rename & new folder inputs ──
@@ -505,6 +508,7 @@ export default function AIWorkspaceClient({
     setIsWorking(true);
     setToolResult(null);
     setQuizScore(null);
+    setCurrentQuizIndex(0);
     setUserAnswers({});
     setFlashcardIndex(0);
     setIsFlipped(false);
@@ -1226,8 +1230,8 @@ export default function AIWorkspaceClient({
                     )}
                   </div>
                 </div>
-              ) : mainMode === "createManual" ? (
-                /* ── MANUAL NOTE CREATOR ── */
+              ) : mainMode === "createManual" || mainMode === "editManual" ? (
+                /* ── MANUAL NOTE CREATOR / EDITOR ── */
                 <div className="h-full flex flex-col bg-[#F9FAFB]">
                   {/* Header */}
                   <div className="px-8 py-6 border-b border-gray-100 bg-white shrink-0 flex items-center justify-between">
@@ -1266,20 +1270,25 @@ export default function AIWorkspaceClient({
                     <button
                       onClick={async () => {
                         if (!manualNoteTitle.trim() || !manualNoteContent.trim()) {
-                          // Simple form validation warning (optional: could use toast)
                           alert("Please fill in both title and content!");
                           return;
                         }
                         setIsSavingManual(true);
-                        const res = await saveGeneratedNote(manualNoteTitle, manualNoteContent, ["Manual Note"]);
-                        if (res.success) {
+                        let res;
+                        if (mainMode === "editManual" && editingNoteId) {
+                          res = await updateGeneratedNote(editingNoteId, manualNoteTitle, manualNoteContent);
+                        } else {
+                          res = await saveGeneratedNote(manualNoteTitle, manualNoteContent, ["Manual Note"]);
+                        }
+
+                        if (res && res.success) {
                           setMainMode("view");
                           setManualNoteTitle("");
                           setManualNoteContent("");
                           setEditorTab("edit");
-                          
-                          // Set it as active after saving (fetchNotes gives updated list, activeNote selection needs updated data)
-                          await fetchNotes(); 
+                          setEditingNoteId(null);
+
+                          await fetchNotes();
                           if (res.data) {
                             setActiveNote(res.data);
                           }
@@ -1299,7 +1308,7 @@ export default function AIWorkspaceClient({
                       ) : (
                         <>
                           <Save size={14} />
-                          Save Note
+                          {mainMode === "editManual" ? "Save Changes" : "Save Note"}
                         </>
                       )}
                     </button>
@@ -1334,6 +1343,19 @@ export default function AIWorkspaceClient({
                         <h2 className="text-[24px] font-black text-gray-900 leading-tight mb-4">
                           {activeNote.title}
                         </h2>
+                        <button
+                          onClick={() => {
+                            if (!activeNote) return;
+                            setManualNoteTitle(activeNote.title || "");
+                            setManualNoteContent(activeNote.content_markdown || "");
+                            setEditingNoteId(activeNote.id);
+                            setEditorTab("edit");
+                            setMainMode("editManual");
+                          }}
+                          className="inline-flex items-center gap-2 px-3 py-2 rounded-lg text-[13px] font-semibold bg-white border border-gray-200 hover:bg-gray-50 text-gray-700 mr-3"
+                        >
+                          <Pencil size={14} /> Edit
+                        </button>
                         <button
                           onClick={toggleTTS}
                           className={clsx(
@@ -1402,7 +1424,7 @@ export default function AIWorkspaceClient({
 
           {/* Body */}
           <div className="p-6">
-            {!activeNote || mainMode !== "view" ? (
+            {!activeNote || (mainMode !== "view" && mainMode !== "editManual") ? (
               /* Locked */
               <div className="flex items-center justify-center gap-4 py-8 text-center">
                 <div className="flex flex-col items-center gap-2">
@@ -1539,89 +1561,175 @@ export default function AIWorkspaceClient({
                       </div>
                     )}
 
-                    {/* Quiz — full width questions */}
+                    {/* Quiz — one question at a time */}
                     {activeTool === "quiz" &&
                       toolResult &&
                       (quizScore !== null ? (
-                        <div className="flex flex-col items-center justify-center py-8 text-center gap-4">
-                          <div className="w-20 h-20 bg-gray-900 rounded-full flex flex-col items-center justify-center">
-                            <span className="text-[28px] font-black text-white">
-                              {quizScore}
-                            </span>
-                            <span className="text-[10px] font-bold text-gray-500 -mt-1">
-                              / {toolResult.length}
-                            </span>
+                        <div className="flex flex-col items-center py-4 w-full max-w-2xl mx-auto">
+                          <div className="flex flex-col items-center justify-center mb-8 text-center gap-4">
+                            <div className="w-20 h-20 bg-gray-900 rounded-full flex flex-col items-center justify-center">
+                              <span className="text-[28px] font-black text-white">
+                                {quizScore}
+                              </span>
+                              <span className="text-[10px] font-bold text-gray-500 -mt-1">
+                                / {toolResult.length}
+                              </span>
+                            </div>
+                            <div>
+                              <h3 className="text-[18px] font-bold text-gray-800">
+                                Quiz Completed!
+                              </h3>
+                              <p className="text-[13px] text-gray-400">
+                                Review your results below.
+                              </p>
+                            </div>
                           </div>
-                          <h3 className="text-[18px] font-bold text-gray-800">
-                            Knowledge Check!
-                          </h3>
-                          <p className="text-[13px] text-gray-400">
-                            Great effort, keep going!
-                          </p>
+
+                          <div className="w-full space-y-4 mb-8">
+                            {toolResult.map((q: any, i: number) => {
+                              const isCorrect = userAnswers[i] === q.correctAnswer;
+                              return (
+                                <div key={i} className="bg-gray-50 rounded-2xl p-6 border border-gray-100 text-left">
+                                  <div className="flex items-start gap-3 mb-4">
+                                    {isCorrect ? (
+                                      <div className="w-6 h-6 rounded-full bg-green-100 flex items-center justify-center shrink-0 mt-0.5">
+                                        <Check size={14} className="text-green-600" />
+                                      </div>
+                                    ) : (
+                                      <div className="w-6 h-6 rounded-full bg-red-100 flex items-center justify-center shrink-0 mt-0.5">
+                                        <X size={14} className="text-red-600" />
+                                      </div>
+                                    )}
+                                    <h4 className="font-bold text-[14px] text-gray-800 leading-snug">
+                                      {q.question}
+                                    </h4>
+                                  </div>
+                                  
+                                  <div className="space-y-2 ml-9">
+                                    <div className="flex flex-col gap-1">
+                                      <span className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Your Answer</span>
+                                      <div className={clsx(
+                                        "px-4 py-2 rounded-xl text-[13px] font-semibold border",
+                                        isCorrect ? "bg-green-50 border-green-100 text-green-700" : "bg-red-50 border-red-100 text-red-700"
+                                      )}>
+                                        {userAnswers[i] || "No answer"}
+                                      </div>
+                                    </div>
+                                    
+                                    {!isCorrect && (
+                                      <div className="flex flex-col gap-1 mt-3">
+                                        <span className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Correct Answer</span>
+                                        <div className="px-4 py-2 rounded-xl text-[13px] font-semibold bg-gray-900 border border-gray-900 text-white">
+                                          {q.correctAnswer}
+                                        </div>
+                                      </div>
+                                    )}
+                                  </div>
+                                </div>
+                              );
+                            })}
+                          </div>
+
                           <button
                             onClick={() => setActiveTool("idle")}
-                            className="mt-2 px-6 py-2.5 bg-gray-900 text-white font-bold rounded-xl text-[13px] hover:bg-gray-700 transition-all"
+                            className="w-full py-3.5 bg-gray-900 text-white font-bold rounded-xl text-[14px] hover:bg-gray-700 transition-all shadow-sm shadow-gray-200"
                           >
-                            Done
+                            Close Review
                           </button>
                         </div>
                       ) : (
-                        <div className="space-y-5 pb-4">
-                          <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-                            {toolResult.map((q: any, i: number) => (
+                        <div className="flex flex-col items-center gap-6 max-w-2xl mx-auto w-full">
+                          {/* Progress Bar */}
+                          <div className="flex gap-1 w-full mb-2">
+                            {toolResult.map((_: any, i: number) => (
                               <div
                                 key={i}
-                                className="bg-gray-50 rounded-2xl p-5 border border-gray-100"
-                              >
-                                <h4 className="font-bold text-[13px] text-gray-800 mb-4 flex gap-3">
-                                  <span className="text-gray-400 shrink-0">
-                                    {i + 1}.
-                                  </span>
-                                  {q.question}
-                                </h4>
-                                <div className="flex flex-col gap-2">
-                                  {q.options.map((opt: string, oi: number) => {
-                                    const picked = userAnswers[i] === opt;
-                                    return (
-                                      <button
-                                        key={oi}
-                                        onClick={() =>
-                                          setUserAnswers((prev: any) => ({
-                                            ...prev,
-                                            [i]: opt,
-                                          }))
-                                        }
-                                        className={clsx(
-                                          "text-left p-3 rounded-xl text-[12px] font-semibold border-2 transition-all",
-                                          picked
-                                            ? "border-gray-900 bg-gray-900 text-white"
-                                            : "border-gray-200 text-gray-600 hover:border-gray-300 hover:bg-white",
-                                        )}
-                                      >
-                                        {opt}
-                                      </button>
-                                    );
-                                  })}
-                                </div>
-                              </div>
+                                className={clsx(
+                                  "flex-1 h-1 rounded-full transition-all",
+                                  i === currentQuizIndex
+                                    ? "bg-gray-800"
+                                    : i < currentQuizIndex
+                                      ? "bg-gray-300"
+                                      : "bg-gray-100",
+                                )}
+                              />
                             ))}
                           </div>
-                          <button
-                            onClick={() => {
-                              let s = 0;
-                              toolResult.forEach((q: any, i: number) => {
-                                if (userAnswers[i] === q.correctAnswer) s++;
-                              });
-                              setQuizScore(s);
-                            }}
-                            disabled={
-                              Object.keys(userAnswers).length <
-                              toolResult.length
-                            }
-                            className="w-full py-3 bg-gray-900 text-white font-bold text-[14px] rounded-xl disabled:opacity-50 hover:bg-gray-700 transition-all"
-                          >
-                            Submit Quiz
-                          </button>
+
+                          {/* Question Card */}
+                          <div className="w-full bg-gray-50 rounded-2xl p-8 border border-gray-100">
+                            <h4 className="font-bold text-[16px] text-gray-800 mb-6 flex gap-3">
+                              <span className="text-gray-400 shrink-0">
+                                {currentQuizIndex + 1}.
+                              </span>
+                              {toolResult[currentQuizIndex]?.question}
+                            </h4>
+                            <div className="flex flex-col gap-3">
+                              {toolResult[currentQuizIndex]?.options.map((opt: string, oi: number) => {
+                                const picked = userAnswers[currentQuizIndex] === opt;
+                                return (
+                                  <button
+                                    key={oi}
+                                    onClick={() =>
+                                      setUserAnswers((prev: any) => ({
+                                        ...prev,
+                                        [currentQuizIndex]: opt,
+                                      }))
+                                    }
+                                    className={clsx(
+                                      "text-left p-4 rounded-xl text-[14px] font-semibold border-2 transition-all",
+                                      picked
+                                        ? "border-gray-900 bg-gray-900 text-white"
+                                        : "border-gray-200 text-gray-600 hover:border-gray-300 hover:bg-white",
+                                    )}
+                                  >
+                                    {opt}
+                                  </button>
+                                );
+                              })}
+                            </div>
+                          </div>
+
+                          {/* Navigation */}
+                          <div className="flex items-center gap-6 w-full">
+                            <button
+                              onClick={() => setCurrentQuizIndex(Math.max(0, currentQuizIndex - 1))}
+                              disabled={currentQuizIndex === 0}
+                              className="w-12 h-12 bg-white border border-gray-200 rounded-xl flex items-center justify-center disabled:opacity-30 hover:border-gray-400 transition-all shadow-sm"
+                            >
+                              <ArrowLeft size={18} />
+                            </button>
+                            
+                            <div className="flex-1 flex justify-center">
+                              <span className="font-semibold text-[14px] text-gray-500">
+                                {currentQuizIndex + 1} / {toolResult.length}
+                              </span>
+                            </div>
+
+                            {currentQuizIndex < toolResult.length - 1 ? (
+                              <button
+                                onClick={() => setCurrentQuizIndex(currentQuizIndex + 1)}
+                                disabled={!userAnswers[currentQuizIndex]}
+                                className="w-12 h-12 bg-gray-900 text-white rounded-xl flex items-center justify-center disabled:opacity-30 hover:bg-gray-700 transition-all shadow-sm"
+                              >
+                                <ArrowRight size={18} />
+                              </button>
+                            ) : (
+                              <button
+                                onClick={() => {
+                                  let s = 0;
+                                  toolResult.forEach((q: any, i: number) => {
+                                    if (userAnswers[i] === q.correctAnswer) s++;
+                                  });
+                                  setQuizScore(s);
+                                }}
+                                disabled={Object.keys(userAnswers).length < toolResult.length}
+                                className="px-8 h-12 bg-gray-900 text-white font-bold text-[14px] rounded-xl disabled:opacity-50 hover:bg-gray-700 transition-all shadow-sm"
+                              >
+                                Submit Quiz
+                              </button>
+                            )}
+                          </div>
                         </div>
                       ))}
                   </>

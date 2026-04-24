@@ -96,6 +96,36 @@ export async function saveGeneratedNote(
   return { success: true, data };
 }
 
+export async function updateGeneratedNote(
+  noteId: string,
+  title: string,
+  markdownContent: string,
+) {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) {
+    return { success: false, error: "Not logged in" };
+  }
+
+  const { data, error } = await supabase
+    .from("notes")
+    .update({ title: title, content_markdown: markdownContent })
+    .eq("id", noteId)
+    .eq("user_id", user.id)
+    .select()
+    .single();
+
+  if (error) {
+    console.error("Supabase Error (update):", error);
+    return { success: false, error: error.message };
+  }
+
+  return { success: true, data };
+}
+
 export async function deleteNoteWithResources(noteId: string) {
   const supabase = await createClient();
   const {
