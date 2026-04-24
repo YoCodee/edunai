@@ -28,6 +28,7 @@ import {
   Bell,
   BellOff,
   BellRing,
+  AlertTriangle,
 } from "lucide-react";
 import clsx from "clsx";
 import { createClient } from "@/utils/supabase/client";

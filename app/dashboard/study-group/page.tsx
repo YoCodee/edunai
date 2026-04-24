@@ -28,6 +28,7 @@ import {
   Trash2,
   Monitor,
   LogOut,
+  AlertTriangle,
 } from "lucide-react";
 import { useState, useEffect } from "react";
 import { clsx, type ClassValue } from "clsx";
