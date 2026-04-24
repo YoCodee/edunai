@@ -568,7 +568,7 @@ export default function BulkImportModal({ onClose, onSuccess }: Props) {
 
   return (
     <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-[780px] max-h-[92vh] flex flex-col overflow-hidden">
+      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-[780px] max-h-[80vh] flex flex-col overflow-hidden">
         {/* Header */}
         <div className="flex items-center justify-between px-7 py-5 border-b border-gray-100 shrink-0">
           <div className="flex items-center gap-3">
