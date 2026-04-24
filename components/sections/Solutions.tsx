@@ -49,7 +49,7 @@ const Solutions = () => {
             </div>
             <div className="flex-1 mx-4">
               <div className="bg-white rounded-md px-3 py-1 text-[11px] text-gray-400 border border-gray-200 max-w-[280px] mx-auto text-center">
-                edunai.app/dashboard
+                Senai.app/dashboard
               </div>
             </div>
           </div>
@@ -68,7 +68,7 @@ const Solutions = () => {
                     className="text-[22px] font-bold tracking-tight text-[#1a1c20]"
                     style={{ fontFamily: "serif" }}
                   >
-                    Edunai
+                    Senai
                   </span>
                 </div>
 

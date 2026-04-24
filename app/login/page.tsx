@@ -65,7 +65,7 @@ export default function LoginPage() {
               className="text-[28px] font-bold tracking-tight inline-block mb-16"
               style={{ fontFamily: "serif" }}
             >
-              Edunai
+              Senai
             </Link>
             <h1 className="text-[40px] font-medium leading-[1.1] tracking-tight mb-4">
               Welcome back to <br /> your academic hub.
@@ -96,7 +96,7 @@ export default function LoginPage() {
           <div className="max-w-[360px] w-full mx-auto">
             <div className="mb-10 text-center md:text-left">
               <h2 className="text-[28px] font-bold text-gray-900 mb-2">
-                Sign in to Edunai
+                Sign in to Senai
               </h2>
               <p className="text-[14px] text-gray-500">
                 Don't have an account?{" "}

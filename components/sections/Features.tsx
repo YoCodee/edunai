@@ -14,7 +14,7 @@ const Features = () => {
         <div className="text-center mb-24">
           <h2 className="text-[48px] md:text-[56px] font-black leading-tight max-w-3xl mx-auto">
             A BRIGHTER FUTURE BEGINS <br />
-            <span className="text-primary italic">WITH EDUNAI PLATFORM</span>
+            <span className="text-primary italic">WITH SENAI PLATFORM</span>
           </h2>
         </div>
 

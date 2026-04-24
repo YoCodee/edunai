@@ -17,7 +17,7 @@ export default function Footer() {
                 className="text-[28px] font-bold text-white tracking-tight"
                 style={{ fontFamily: "serif" }}
               >
-                Edunai
+                Senai
               </span>
               <p className="text-[14px] text-gray-400 mt-4 leading-relaxed max-w-sm">
                 The all-in-one AI academic workspace that helps students
@@ -194,7 +194,7 @@ export default function Footer() {
         {/* Bottom Bar */}
         <div className="pt-8 border-t border-gray-800 flex flex-col md:flex-row justify-between items-center gap-6">
           <p className="text-[13px] text-gray-500">
-            © {new Date().getFullYear()} Edunai Inc. All rights reserved.
+            © {new Date().getFullYear()} Senai Inc. All rights reserved.
           </p>
 
           <div className="flex items-center gap-6">

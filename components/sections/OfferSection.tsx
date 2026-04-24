@@ -198,7 +198,7 @@ export default function OfferSection() {
             Everything in one workspace
           </h2>
           <p className="text-[17px] text-gray-500 max-w-lg mx-auto">
-            Forget switching between scattered apps. Edunai integrates your
+            Forget switching between scattered apps. Senai integrates your
             entire academic life seamlessly.
           </p>
         </div>

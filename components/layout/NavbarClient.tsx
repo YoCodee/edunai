@@ -82,7 +82,7 @@ export default function NavbarClient({ initialUser }: { initialUser: any }) {
             className="text-[20px] font-bold tracking-tight text-[#1a1c20] hidden sm:block"
             style={{ fontFamily: "serif" }}
           >
-            Edunai
+            Senai
           </span>
         </Link>
 

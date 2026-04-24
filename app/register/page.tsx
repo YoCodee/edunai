@@ -233,7 +233,7 @@ export default function RegisterPage() {
               className="text-[28px] font-bold tracking-tight inline-block mb-10"
               style={{ fontFamily: "serif" }}
             >
-              Edunai
+              Senai
             </Link>
           </div>
 

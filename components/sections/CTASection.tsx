@@ -39,7 +39,7 @@ export default function CTASection() {
           </h2>
 
           <p className="text-[16px] text-gray-500 leading-relaxed mb-10 max-w-lg cursor-default">
-            See how Edunai manages your schedules, processes your whiteboard
+            See how Senai manages your schedules, processes your whiteboard
             notes, and syncs collaborative projects right before your eyes.
             Everything centralized in one smart dashboard.
           </p>

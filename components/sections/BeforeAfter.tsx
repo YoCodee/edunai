@@ -9,6 +9,7 @@ import {
   BrainCircuit,
   Users,
   MessageSquare,
+
 } from "lucide-react";
 
 gsap.registerPlugin(ScrollTrigger);
@@ -512,7 +513,7 @@ export default function BeforeAfter() {
                 className="text-white text-[32px] font-bold"
                 style={{ fontFamily: "serif" }}
               >
-                Edunai
+                Senai
               </span>
             </div>
             <p className="text-[12px] font-bold text-gray-400 mt-4 tracking-wide uppercase">

@@ -16,7 +16,7 @@ const testimonialsData = [
     role: "Computer Science Major",
     image: "https://i.pravatar.cc/150?u=james",
     rating: 5.0,
-    text: "Edunai has totally streamlined my semester. The AI whiteboard scanner automatically generates flashcards and notes from lectures, saving my team hours of manual typing and organization.",
+    text: "Senai has totally streamlined my semester. The AI whiteboard scanner automatically generates flashcards and notes from lectures, saving my team hours of manual typing and organization.",
   },
   {
     id: 2,
@@ -164,7 +164,7 @@ export default function Testimonials() {
             Words of Appreciation
           </h2>
           <p className="text-[17px] text-gray-500 max-w-lg mx-auto">
-            Thousands of students, from freshmen to graduates, use Edunai to
+            Thousands of students, from freshmen to graduates, use Senai to
             manage their academic life and collaborate perfectly.
           </p>
         </div>

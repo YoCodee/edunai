@@ -125,7 +125,7 @@ export default function IntroAnimation() {
               : "none",
           }}
         >
-          E
+          S
         </span>
 
         {/* ── "dunai" slides in from right ────────────────────────────── */}
@@ -169,7 +169,7 @@ export default function IntroAnimation() {
               display: "inline-block",
             }}
           >
-            dun
+            en
           </span>
 
           {/* "ai" — Be Vietnam Pro bold */}

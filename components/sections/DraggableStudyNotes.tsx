@@ -223,7 +223,7 @@ export default function DraggableStudyNotes() {
             Your Learning Journey
           </h2>
           <p className="text-lg text-gray-600 max-w-2xl mx-auto">
-            Drag the cards to explore the key benefits of EduNAI
+            Drag the cards to explore the key benefits of Senai
           </p>
         </div>
 
