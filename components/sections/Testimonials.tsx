@@ -156,7 +156,7 @@ export default function Testimonials() {
   return (
     <section
       ref={sectionRef}
-      className="bg-[#fbfcff] py-24 min-h-screen relative overflow-hidden font-sans border-t border-gray-100 flex flex-col justify-center"
+      className=" py-24 min-h-screen relative overflow-hidden font-sans border-t border-gray-100 flex flex-col justify-center"
     >
       <div className="max-w-[1200px] mx-auto px-6 relative z-10 flex flex-col items-center w-full">
         <div className="text-center mb-10 w-full">

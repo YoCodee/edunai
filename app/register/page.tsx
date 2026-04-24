@@ -44,7 +44,7 @@ export default function RegisterPage() {
   };
 
   return (
-    <div className="min-h-screen bg-[#fbfcff] font-sans flex items-center justify-center p-4 selection:bg-orange-200">
+    <div className="min-h-screen  font-sans flex items-center justify-center p-4 selection:bg-orange-200">
       {/* Back button */}
       <Link
         href="/"

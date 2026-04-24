@@ -102,7 +102,7 @@ export default function ProjectBoardsOverview() {
   };
 
   return (
-    <div className="min-h-full font-sans bg-[#fbfcff] flex flex-col p-6 lg:p-8">
+    <div className="min-h-full font-sans  flex flex-col p-6 lg:p-8">
       {/* Header */}
       <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 mb-10 w-full max-w-7xl mx-auto">
         <div>

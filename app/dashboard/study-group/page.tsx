@@ -499,7 +499,7 @@ export default function StudyGroupPage() {
   const publicLiveSessions = allGroups.filter((g) => g.group_type === "public");
 
   return (
-    <div className="flex-1 flex flex-col h-full bg-[#fbfcff] p-8 overflow-y-auto min-h-screen">
+    <div className="flex-1 flex flex-col h-full  p-8 overflow-y-auto min-h-screen">
       {/* --- Top Header Context --- */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-10">
         <div className="flex items-center gap-4">

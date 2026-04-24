@@ -311,7 +311,7 @@ export default function BoardDetailPage({ params }: PageProps) {
 
   if (isLoading) {
     return (
-      <div className="flex-1 flex flex-col items-center justify-center h-full bg-[#fbfcff]">
+      <div className="flex-1 flex flex-col items-center justify-center h-full ">
         <div className="w-10 h-10 border-4 border-gray-200 border-t-[#1a1c20] rounded-full animate-spin"></div>
         <p className="mt-4 text-gray-500 font-medium">
           Loading Workspace Layout...
@@ -328,7 +328,7 @@ export default function BoardDetailPage({ params }: PageProps) {
     );
 
   return (
-    <div className="flex flex-col h-[calc(100vh-80px)] font-sans bg-[#fbfcff] -mx-6 md:-mx-10 -mt-6 md:-mt-10 overflow-hidden relative overflow-x-auto">
+    <div className="flex flex-col h-[calc(100vh-80px)] font-sans  -mx-6 md:-mx-10 -mt-6 md:-mt-10 overflow-hidden relative overflow-x-auto">
       {/* 1. Header Area (Sticks to top) */}
       <div className="h-[80px] min-w-max border-b border-gray-100 flex items-center justify-between px-8 bg-white/80 backdrop-blur-md sticky top-0 left-0 right-0 z-10 shrink-0">
         <div className="flex items-center gap-6">

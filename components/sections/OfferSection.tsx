@@ -186,7 +186,7 @@ export default function OfferSection() {
   return (
     <section
       ref={containerRef}
-      className="bg-[#fbfcff] py-24 relative font-sans overflow-hidden"
+      className=" py-24 relative font-sans overflow-hidden"
     >
       <div className="max-w-[1200px] mx-auto px-6 relative z-10">
         {/* ── Header ──────────────────────────────────────────────────── */}
@@ -520,7 +520,7 @@ export default function OfferSection() {
                 ].map((r) => (
                   <div
                     key={r.title}
-                    className="bg-[#fbfcff] rounded-2xl border border-gray-100 p-3.5 flex items-center gap-3"
+                    className=" rounded-2xl border border-gray-100 p-3.5 flex items-center gap-3"
                   >
                     <span className="text-[24px] shrink-0 drop-shadow-sm">
                       {r.emoji}

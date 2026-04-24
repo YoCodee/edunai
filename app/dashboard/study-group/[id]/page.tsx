@@ -241,7 +241,7 @@ function MiniBoardPanel({ boardId, supabase, onClose, hasEditAccess, participant
   if (loading) return <div className="p-8 text-center text-gray-500 flex flex-col items-center"><div className="w-8 h-8 rounded-full border-2 border-t-blue-500 animate-spin mb-4" /> Memuat Mini Board...</div>;
 
   return (
-    <div className="flex flex-col h-full bg-[#fbfcff] relative">
+    <div className="flex flex-col h-full  relative">
       <div className="p-4 border-b border-gray-100 flex items-center justify-between bg-white shrink-0">
         <div>
           <h3 className="font-bold text-[15px] text-gray-900 flex items-center gap-1.5"><Layout size={16} className="text-green-500" /> {boardInfo?.title}</h3>
@@ -732,7 +732,7 @@ export default function StudyGroupRoom() {
   };
 
   return (
-    <div className="flex-1 flex flex-col h-screen bg-[#fbfcff] overflow-hidden">
+    <div className="flex-1 flex flex-col h-screen  overflow-hidden">
       {/* --- HEADER --- */}
       <header className="bg-white border-b border-gray-100 px-6 py-4 flex items-center justify-between shrink-0 shadow-[0_2px_10px_rgba(0,0,0,0.02)] z-10">
         <div className="flex items-center gap-4">
@@ -818,7 +818,7 @@ export default function StudyGroupRoom() {
       {/* --- MAIN LAYOUT --- */}
       <div className="flex-1 flex overflow-hidden relative min-h-0">
         {/* CHAT AREA */}
-        <div className="flex-1 flex flex-col bg-[#fbfcff] z-0 min-h-0">
+        <div className="flex-1 flex flex-col  z-0 min-h-0">
           {/* Chat Messages */}
           <div className="flex-1 overflow-y-auto p-6 space-y-6">
             <div className="text-center">

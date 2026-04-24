@@ -179,7 +179,7 @@ export default function RoadmapDetailClient({
   };
 
   return (
-    <div className="min-h-full font-sans bg-[#fbfcff] flex flex-col">
+    <div className="min-h-full font-sans  flex flex-col">
       {/* Header */}
       <div className="bg-white border-b border-gray-100 px-6 py-4 sticky top-0 z-20">
         <div className="max-w-7xl mx-auto flex items-center justify-between">

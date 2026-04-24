@@ -38,7 +38,7 @@ export default function HowItWorks() {
       <div className="max-w-[1200px] mx-auto px-6 relative z-10">
         {/* Header */}
         <div className="flex flex-col items-center text-center mb-20">
-          <div className="px-5 py-2 bg-[#fbfcff] rounded-full border border-gray-200 shadow-sm text-sm font-medium text-gray-600 mb-8">
+          <div className="px-5 py-2  rounded-full border border-gray-200 shadow-sm text-sm font-medium text-gray-600 mb-8">
             How it Works
           </div>
           <h2 className="text-[36px] md:text-[46px] font-medium leading-[1.1] tracking-tight text-[#1a1c20] max-w-2xl">

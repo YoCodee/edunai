@@ -309,7 +309,7 @@ export default function BeforeAfter() {
   return (
     <section
       ref={sectionRef}
-      className="bg-[#fbfcff] py-24 relative overflow-hidden font-sans border-t border-gray-100 px-6"
+      className=" py-24 relative overflow-hidden font-sans border-t border-gray-100 px-6"
     >
       {/* Ambient glow */}
       <div

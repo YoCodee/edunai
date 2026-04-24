@@ -20,7 +20,7 @@ import {
 
 const Solutions = () => {
   return (
-    <section className="bg-[#fbfcff] py-24 relative overflow-hidden font-sans">
+    <section className=" py-24 relative overflow-hidden font-sans">
       <div className="max-w-[1200px] mx-auto px-6 relative z-10">
         {/* ── Header ──────────────────────────────────────────────────── */}
         <div className="flex flex-col items-center text-center mb-16">
@@ -91,7 +91,7 @@ const Solutions = () => {
                         key={item.name}
                         className={`flex items-center gap-2.5 px-3 py-2 rounded-xl text-[12px] font-medium cursor-default ${
                           item.active
-                            ? "bg-[#fbfcff] text-[#1a1c20] border border-gray-100 shadow-[0_2px_8px_rgba(0,0,0,0.03)] font-bold"
+                            ? " text-[#1a1c20] border border-gray-100 shadow-[0_2px_8px_rgba(0,0,0,0.03)] font-bold"
                             : "text-gray-400"
                         }`}
                       >

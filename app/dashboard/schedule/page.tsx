@@ -297,7 +297,7 @@ export default function SmartSchedulerPage() {
      Render
   ────────────────────────────────────────── */
   return (
-    <div className="flex h-full font-sans bg-[#fbfcff] relative">
+    <div className="flex h-full font-sans  relative">
       {/* ── In-App Reminder Toasts ── */}
       <div className="fixed top-4 right-4 z-[100] flex flex-col gap-2 pointer-events-none">
         {toasts.map((toast) => (
