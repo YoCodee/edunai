@@ -18,7 +18,7 @@ export async function generateStudyMaterial(
   // Fetch Note content
   const { data: note, error: noteError } = await supabase
     .from("notes")
-    .select("title, content_markdown")
+    .select("title, content_markdown, folder_id")
     .eq("id", noteId)
     .single();
 
@@ -46,10 +46,28 @@ ${note.content_markdown}
       const response = await model.invoke([
         new HumanMessage({ content: prompt }),
       ]);
+      const summaryContent = response.content as string;
+
+      // Save as a new note with a special tag
+      const { data: summaryNote, error: summaryErr } = await supabase
+        .from("notes")
+        .insert({
+          user_id: user.id,
+          title: `[Summary] ${note.title}`,
+          content_markdown: summaryContent,
+          tags: ["AI-Summary"],
+          folder_id: (note as any).folder_id || null,
+        })
+        .select()
+        .single();
+
+      if (summaryErr) console.error("Summary save error:", summaryErr);
+
       return {
         success: true,
         type: "summary",
-        data: response.content as string,
+        data: summaryContent,
+        noteId: summaryNote?.id,
       };
     } else if (type === "flashcards") {
       const prompt = `You are an expert tutor creating flashcards. Based on the following study material, create 5 to 10 high-quality flashcards to help a student memorize the key concepts.
@@ -79,7 +97,10 @@ Formatting RULES:
           user_id: user.id,
           note_id: noteId,
           title: `${note.title} Flashcards`,
-          description: "AI Generated Flashcards",
+          description: JSON.stringify(flashcardsData.map((c: any) => ({
+            front_text: c.front,
+            back_text: c.back
+          }))), 
         })
         .select()
         .single();
@@ -129,7 +150,26 @@ Formatting RULES:
         .trim();
       const quizData = JSON.parse(rawText);
 
-      return { success: true, type: "quiz", data: quizData };
+      // Save to study_sets as a "quiz" type (storing JSON in description for simplicity)
+      const { data: quizSet, error: quizErr } = await supabase
+        .from("study_sets")
+        .insert({
+          user_id: user.id,
+          note_id: noteId,
+          title: `[Quiz] ${note.title}`,
+          description: JSON.stringify(quizData), // Store JSON in description
+        })
+        .select()
+        .single();
+
+      if (quizErr) console.error("Quiz save error:", quizErr);
+
+      return { 
+        success: true, 
+        type: "quiz", 
+        data: quizData,
+        setId: quizSet?.id
+      };
     }
 
     return { error: "Unknown type" };

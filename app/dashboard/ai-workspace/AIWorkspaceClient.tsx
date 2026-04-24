@@ -59,7 +59,7 @@ import {
   updateGeneratedNote,
   deleteNoteWithResources,
 } from "./actions";
-import { generateStudyMaterial } from "./assistant-actions";
+import { generateStudyMaterial, getStudySet } from "./assistant-actions";
 
 // ─────────────────────────────────────────────
 // Types
@@ -100,6 +100,7 @@ export default function AIWorkspaceClient({
   // ── Data State ──
   const [notes, setNotes] = useState<Note[]>(initialNotes);
   const [folders, setFolders] = useState<NoteFolder[]>(initialFolders);
+  const [studySets, setStudySets] = useState<any[]>(initialStudySets);
   const [isNotesLoading, setIsNotesLoading] = useState(false);
 
   // ── Folder UI State ──
@@ -505,6 +506,7 @@ export default function AIWorkspaceClient({
   // Handlers: AI Tools
   // ─────────────────────────────────────────────
   const startTool = async (type: "summary" | "flashcards" | "quiz") => {
+    if (!activeNote) return;
     setActiveTool(type);
     setIsWorking(true);
     setToolResult(null);
@@ -513,11 +515,40 @@ export default function AIWorkspaceClient({
     setUserAnswers({});
     setFlashcardIndex(0);
     setIsFlipped(false);
-    const res = await generateStudyMaterial(activeNote!.id, type);
-    if (res.success)
-      setToolResult(type === "flashcards" ? res.flashcards : res.data);
-    else {
-      alert("Error generating content");
+    
+    const res = await generateStudyMaterial(activeNote.id, type);
+    
+    if (res.success) {
+      if (type === "flashcards") {
+        setToolResult(res.flashcards);
+      } else {
+        setToolResult(res.data);
+      }
+
+      // Update studySets state if it's a flashcard or quiz
+      if (res.setId) {
+        const newSet = {
+          id: res.setId,
+          note_id: activeNote.id,
+          title: type === "flashcards" ? `${activeNote.title} Flashcards` : `[Quiz] ${activeNote.title}`,
+          description: type === "flashcards" ? JSON.stringify(res.flashcards) : JSON.stringify(res.data),
+          created_at: new Date().toISOString()
+        };
+        setStudySets(prev => [newSet, ...prev]);
+      }
+
+      // If it's a summary, we need to refresh notes to show the new [Summary] note
+      if (type === "summary") {
+        // Fetch fresh notes
+        const { data: updatedNotes } = await supabase
+          .from("notes")
+          .select("id, title, created_at, content_markdown, tags, folder_id")
+          .eq("user_id", (await supabase.auth.getUser()).data.user?.id)
+          .order("created_at", { ascending: false });
+        if (updatedNotes) setNotes(updatedNotes);
+      }
+    } else {
+      alert("Error generating content: " + res.error);
       setActiveTool("idle");
     }
     setIsWorking(false);
@@ -1815,7 +1846,7 @@ export default function AIWorkspaceClient({
                     </div>
                     <ChevronRight
                       size={15}
-                      className="text-gray-300 group-hover:text-gray-500 mt-1 transition-colors"
+                      className="text-dash-text-secondary group-hover:text-dash-text-primary mt-1 transition-colors"
                     />
                   </div>
                   <h3 className="text-[15px] font-bold text-gray-800 mb-1">
@@ -1825,6 +1856,78 @@ export default function AIWorkspaceClient({
                     Test yourself with AI-generated multiple choice questions.
                   </p>
                 </div>
+
+                {/* Saved Resources for this note */}
+                {studySets.filter(s => s.note_id === activeNote.id).length > 0 && (
+                  <div className="mt-8">
+                    <div className="flex items-center gap-2 mb-4 px-1">
+                      <div className="w-1 h-4 bg-gray-900 rounded-full" />
+                      <h4 className="text-[11px] font-bold text-gray-400 uppercase tracking-widest">
+                        Saved for this note
+                      </h4>
+                    </div>
+                    <div className="space-y-2">
+                      {studySets
+                        .filter(s => s.note_id === activeNote.id)
+                        .map((set) => {
+                          const isQuiz = set.title.startsWith("[Quiz]");
+                          return (
+                            <div
+                              key={set.id}
+                              onClick={async () => {
+                                if (isQuiz) {
+                                  setActiveTool("quiz");
+                                  setToolResult(JSON.parse(set.description));
+                                  setQuizScore(null);
+                                  setCurrentQuizIndex(0);
+                                  setUserAnswers({});
+                                } else {
+                                  setActiveTool("flashcards");
+                                  setIsWorking(true);
+                                  
+                                  // Try to parse from description first (new format)
+                                  try {
+                                    const savedCards = JSON.parse(set.description);
+                                    if (Array.isArray(savedCards)) {
+                                      setToolResult(savedCards);
+                                    } else {
+                                      throw new Error("Not an array");
+                                    }
+                                  } catch (e) {
+                                    // Fallback to legacy getStudySet if description isn't JSON
+                                    const res = await getStudySet(set.id);
+                                    if (res.flashcards) {
+                                      setToolResult(res.flashcards);
+                                    }
+                                  }
+                                  
+                                  setFlashcardIndex(0);
+                                  setIsFlipped(false);
+                                  setIsWorking(false);
+                                }
+                              }}
+                              className="flex items-center gap-3 p-3 bg-white border border-gray-100 rounded-xl hover:border-gray-300 hover:shadow-sm transition-all cursor-pointer group"
+                            >
+                              <div className={clsx(
+                                "w-8 h-8 rounded-lg flex items-center justify-center shrink-0",
+                                isQuiz ? "bg-blue-50 text-blue-500" : "bg-purple-50 text-purple-500"
+                              )}>
+                                {isQuiz ? <FileQuestion size={14} /> : <Layers size={14} />}
+                              </div>
+                              <div className="flex-1 min-w-0">
+                                <p className="text-[13px] font-bold text-gray-700 truncate group-hover:text-gray-900 transition-colors">
+                                  {set.title}
+                                </p>
+                                <p className="text-[10px] text-gray-400">
+                                  {format(parseISO(set.created_at), "MMM d, yyyy")}
+                                </p>
+                              </div>
+                            </div>
+                          );
+                        })}
+                    </div>
+                  </div>
+                )}
               </div>
             )}
           </div>
