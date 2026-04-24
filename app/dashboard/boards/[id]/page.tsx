@@ -22,7 +22,7 @@ import {
 } from "lucide-react";
 import clsx from "clsx";
 import {
-  moveCard,
+  reorderCards,
   createCard,
   generateAITasks,
   updateCardLabels,
@@ -121,7 +121,7 @@ export default function BoardDetailPage({ params }: PageProps) {
   };
 
   const handleDragEnd = async (result: any) => {
-    const { destination, source, draggableId } = result;
+    const { destination, source } = result;
 
     if (!destination) return; // Dropped outside the list
     if (
@@ -161,8 +161,9 @@ export default function BoardDetailPage({ params }: PageProps) {
 
       setLists(updatedLists);
 
-      // Fire Server Action (Optimistic UI Update already happened above)
-      await moveCard(draggableId, destination.droppableId, destination.index);
+      // Fire Server Action
+      const newCardIds = newClonedCards.map((c) => c.id);
+      await reorderCards(source.droppableId, newCardIds);
     } else {
       // Moving from one list to another
       const sourceCards = Array.from(sourceList.board_cards) as any[];
@@ -189,7 +190,14 @@ export default function BoardDetailPage({ params }: PageProps) {
       setLists(updatedLists);
 
       // Fire Server Action
-      await moveCard(draggableId, destination.droppableId, destination.index);
+      const sourceCardIds = newSourceCards.map((c) => c.id);
+      const destCardIds = newDestCards.map((c) => c.id);
+      await reorderCards(
+        source.droppableId,
+        sourceCardIds,
+        destination.droppableId,
+        destCardIds,
+      );
     }
   };
 
@@ -481,163 +489,168 @@ export default function BoardDetailPage({ params }: PageProps) {
                                 {...provided.dragHandleProps}
                                 style={provided.draggableProps.style}
                                 className={clsx(
-                                  "bg-white rounded-[16px] p-4 mb-3 shadow-[0_2px_8px_rgba(0,0,0,0.04)] border border-gray-100 hover:border-gray-300 transition-colors group select-none relative",
-                                  snapshot.isDragging
-                                    ? "shadow-2xl rotate-[3deg] scale-105 border-blue-200 z-50 ring-2 ring-[#38bcfc]/20"
-                                    : "",
+                                  "mb-3 outline-none",
+                                  snapshot.isDragging ? "z-50" : ""
                                 )}
                                 onClick={() => setAssignMenuOpen(null)} // Close menu if clicking outside specifically
                               >
-                                {/* Labels (if any exist) */}
-                                {normalLabels.length > 0 && (
-                                  <div className="flex gap-1.5 mb-3 flex-wrap">
-                                    {normalLabels.map((lbl: any, i: number) => (
-                                      <span
-                                        key={i}
-                                        className="w-10 h-2 bg-blue-400 rounded-full inline-block"
-                                      ></span>
-                                    ))}
-                                  </div>
-                                )}
-
-                                {/* Card Title & Delete */}
-                                <div className="flex justify-between items-start gap-2 mb-3">
-                                  <h4 className="text-[14px] font-semibold text-gray-800 leading-snug">
-                                    {card.title}
-                                  </h4>
-                                  <button
-                                    onClick={(e) => {
-                                      e.stopPropagation();
-                                      handleDeleteCard(card.id);
-                                    }}
-                                    className="p-1 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-md opacity-0 group-hover:opacity-100 transition-all shrink-0 -mt-1 -mr-1"
-                                    title="Delete Task"
-                                  >
-                                    <X size={14} />
-                                  </button>
-                                </div>
-
-                                {/* Card Footer Meta */}
-                                <div className="flex items-center justify-between text-[11px] font-medium text-gray-400 mt-auto pt-1">
-                                  {card.description && (
-                                    <div
-                                      className="flex items-center gap-1 group-hover:text-gray-600 transition-colors"
-                                      title="Has Description"
-                                    >
-                                      <AlignLeft size={12} />
+                                <div className={clsx(
+                                  "bg-white rounded-[16px] p-4 shadow-[0_2px_8px_rgba(0,0,0,0.04)] border border-gray-100 hover:border-gray-300 transition-all group select-none relative",
+                                  snapshot.isDragging
+                                    ? "shadow-2xl rotate-[3deg] scale-105 border-blue-200 ring-2 ring-[#38bcfc]/20"
+                                    : "",
+                                )}>
+                                  {/* Labels (if any exist) */}
+                                  {normalLabels.length > 0 && (
+                                    <div className="flex gap-1.5 mb-3 flex-wrap">
+                                      {normalLabels.map((lbl: any, i: number) => (
+                                        <span
+                                          key={i}
+                                          className="w-10 h-2 bg-blue-400 rounded-full inline-block"
+                                        ></span>
+                                      ))}
                                     </div>
                                   )}
 
-                                  {/* Assignees & Collaborator Logic */}
-                                  <div className="flex items-center -space-x-1.5 ml-auto relative">
-                                    {assignees.map((a: any, idx: number) => (
-                                      <div
-                                        key={idx}
-                                        className="w-[22px] h-[22px] rounded-full border-2 border-white bg-gradient-to-br from-indigo-100 to-purple-100 flex items-center justify-center overflow-hidden shadow-sm z-0"
-                                        title={a.name}
-                                      >
-                                        {a.avatar_url ? (
-                                          <img
-                                            src={a.avatar_url}
-                                            className="w-full h-full object-cover"
-                                          />
-                                        ) : (
-                                          <span className="text-[9px] font-bold text-gray-500">
-                                            {a.name?.charAt(0) || "U"}
-                                          </span>
-                                        )}
-                                      </div>
-                                    ))}
-
+                                  {/* Card Title & Delete */}
+                                  <div className="flex justify-between items-start gap-2 mb-3">
+                                    <h4 className="text-[14px] font-semibold text-gray-800 leading-snug">
+                                      {card.title}
+                                    </h4>
                                     <button
                                       onClick={(e) => {
                                         e.stopPropagation();
-                                        setAssignMenuOpen(
-                                          assignMenuOpen === card.id
-                                            ? null
-                                            : card.id,
-                                        );
+                                        handleDeleteCard(card.id);
                                       }}
-                                      className="w-[22px] h-[22px] rounded-full border-2 border-dashed border-gray-300 flex items-center justify-center text-gray-400 hover:text-[#38bcfc] hover:border-[#38bcfc] bg-white hover:bg-blue-50 transition-colors z-10"
-                                      title="Assign Member"
+                                      className="p-1 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-md opacity-0 group-hover:opacity-100 transition-all shrink-0 -mt-1 -mr-1"
+                                      title="Delete Task"
                                     >
-                                      <Plus size={12} strokeWidth={3} />
+                                      <X size={14} />
                                     </button>
+                                  </div>
 
-                                    {/* Assignment Dropdown Menu */}
-                                    {assignMenuOpen === card.id && (
+                                  {/* Card Footer Meta */}
+                                  <div className="flex items-center justify-between text-[11px] font-medium text-gray-400 mt-auto pt-1">
+                                    {card.description && (
                                       <div
-                                        className="absolute top-full right-0 mt-2 w-52 bg-white rounded-xl shadow-xl border border-gray-100 z-[60] p-1.5 overflow-hidden"
-                                        onClick={(e) => e.stopPropagation()}
+                                        className="flex items-center gap-1 group-hover:text-gray-600 transition-colors"
+                                        title="Has Description"
                                       >
-                                        <div className="text-[10px] font-bold text-gray-400 px-3 py-1.5 mb-1 border-b border-gray-50 uppercase tracking-wider flex items-center justify-between">
-                                          <span>Assign to...</span>
-                                          <X
-                                            size={12}
-                                            className="cursor-pointer hover:text-gray-900"
-                                            onClick={() =>
-                                              setAssignMenuOpen(null)
-                                            }
-                                          />
-                                        </div>
-                                        <div className="max-h-48 overflow-y-auto custom-scrollbar">
-                                          {boardMembers.length > 0 ? (
-                                            boardMembers.map((member) => {
-                                              const isAssigned = assignees.some(
-                                                (l: any) =>
-                                                  l.user_id === member.user_id,
-                                              );
-                                              return (
-                                                <div
-                                                  key={member.user_id}
-                                                  className="flex items-center gap-2 p-2 hover:bg-gray-50 rounded-lg cursor-pointer transition-colors"
-                                                  onClick={() =>
-                                                    toggleAssignee(
-                                                      card.id,
-                                                      member,
-                                                      card.labels || [],
-                                                    )
-                                                  }
-                                                >
-                                                  <div className="w-7 h-7 rounded-full border border-gray-100 bg-gradient-to-br from-blue-50 to-indigo-50 overflow-hidden flex items-center justify-center">
-                                                    {member.profiles
-                                                      ?.avatar_url ? (
-                                                      <img
-                                                        src={
-                                                          member.profiles
-                                                            .avatar_url
-                                                        }
-                                                        className="w-full h-full object-cover"
-                                                      />
-                                                    ) : (
-                                                      <span className="text-[11px] font-bold text-indigo-500">
-                                                        {member.profiles?.full_name?.charAt(
-                                                          0,
-                                                        ) || "U"}
-                                                      </span>
-                                                    )}
-                                                  </div>
-                                                  <span className="text-[13px] font-medium text-gray-700 truncate">
-                                                    {member.profiles
-                                                      ?.full_name || "Member"}
-                                                  </span>
-                                                  {isAssigned && (
-                                                    <CheckCircle2
-                                                      size={16}
-                                                      className="text-[#38bcfc] ml-auto shrink-0"
-                                                    />
-                                                  )}
-                                                </div>
-                                              );
-                                            })
-                                          ) : (
-                                            <div className="p-3 text-center text-gray-400 text-[12px]">
-                                              No members in this board.
-                                            </div>
-                                          )}
-                                        </div>
+                                        <AlignLeft size={12} />
                                       </div>
                                     )}
+
+                                    {/* Assignees & Collaborator Logic */}
+                                    <div className="flex items-center -space-x-1.5 ml-auto relative">
+                                      {assignees.map((a: any, idx: number) => (
+                                        <div
+                                          key={idx}
+                                          className="w-[22px] h-[22px] rounded-full border-2 border-white bg-gradient-to-br from-indigo-100 to-purple-100 flex items-center justify-center overflow-hidden shadow-sm z-0"
+                                          title={a.name}
+                                        >
+                                          {a.avatar_url ? (
+                                            <img
+                                              src={a.avatar_url}
+                                              className="w-full h-full object-cover"
+                                            />
+                                          ) : (
+                                            <span className="text-[9px] font-bold text-gray-500">
+                                              {a.name?.charAt(0) || "U"}
+                                            </span>
+                                          )}
+                                        </div>
+                                      ))}
+
+                                      <button
+                                        onClick={(e) => {
+                                          e.stopPropagation();
+                                          setAssignMenuOpen(
+                                            assignMenuOpen === card.id
+                                              ? null
+                                              : card.id,
+                                          );
+                                        }}
+                                        className="w-[22px] h-[22px] rounded-full border-2 border-dashed border-gray-300 flex items-center justify-center text-gray-400 hover:text-[#38bcfc] hover:border-[#38bcfc] bg-white hover:bg-blue-50 transition-colors z-10"
+                                        title="Assign Member"
+                                      >
+                                        <Plus size={12} strokeWidth={3} />
+                                      </button>
+
+                                      {/* Assignment Dropdown Menu */}
+                                      {assignMenuOpen === card.id && (
+                                        <div
+                                          className="absolute top-full right-0 mt-2 w-52 bg-white rounded-xl shadow-xl border border-gray-100 z-[60] p-1.5 overflow-hidden"
+                                          onClick={(e) => e.stopPropagation()}
+                                        >
+                                          <div className="text-[10px] font-bold text-gray-400 px-3 py-1.5 mb-1 border-b border-gray-50 uppercase tracking-wider flex items-center justify-between">
+                                            <span>Assign to...</span>
+                                            <X
+                                              size={12}
+                                              className="cursor-pointer hover:text-gray-900"
+                                              onClick={() =>
+                                                setAssignMenuOpen(null)
+                                              }
+                                            />
+                                          </div>
+                                          <div className="max-h-48 overflow-y-auto custom-scrollbar">
+                                            {boardMembers.length > 0 ? (
+                                              boardMembers.map((member) => {
+                                                const isAssigned = assignees.some(
+                                                  (l: any) =>
+                                                    l.user_id === member.user_id,
+                                                );
+                                                return (
+                                                  <div
+                                                    key={member.user_id}
+                                                    className="flex items-center gap-2 p-2 hover:bg-gray-50 rounded-lg cursor-pointer transition-colors"
+                                                    onClick={() =>
+                                                      toggleAssignee(
+                                                        card.id,
+                                                        member,
+                                                        card.labels || [],
+                                                      )
+                                                    }
+                                                  >
+                                                    <div className="w-7 h-7 rounded-full border border-gray-100 bg-gradient-to-br from-blue-50 to-indigo-50 overflow-hidden flex items-center justify-center">
+                                                      {member.profiles
+                                                        ?.avatar_url ? (
+                                                        <img
+                                                          src={
+                                                            member.profiles
+                                                              .avatar_url
+                                                          }
+                                                          className="w-full h-full object-cover"
+                                                        />
+                                                      ) : (
+                                                        <span className="text-[11px] font-bold text-indigo-500">
+                                                          {member.profiles?.full_name?.charAt(
+                                                            0,
+                                                          ) || "U"}
+                                                        </span>
+                                                      )}
+                                                    </div>
+                                                    <span className="text-[13px] font-medium text-gray-700 truncate">
+                                                      {member.profiles
+                                                        ?.full_name || "Member"}
+                                                    </span>
+                                                    {isAssigned && (
+                                                      <CheckCircle2
+                                                        size={16}
+                                                        className="text-[#38bcfc] ml-auto shrink-0"
+                                                      />
+                                                    )}
+                                                  </div>
+                                                );
+                                              })
+                                            ) : (
+                                              <div className="p-3 text-center text-gray-400 text-[12px]">
+                                                No members in this board.
+                                              </div>
+                                            )}
+                                          </div>
+                                        </div>
+                                      )}
+                                    </div>
                                   </div>
                                 </div>
                               </div>

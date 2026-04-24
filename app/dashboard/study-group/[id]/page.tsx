@@ -121,7 +121,7 @@ function BoardWidget({ boardId, supabase, onOpenBoard, isMe, hasEditAccess }: { 
 }
 
 import { DragDropContext, Droppable, Draggable } from "@hello-pangea/dnd";
-import { moveCard, createCard, updateMemberRole } from "../../boards/[id]/actions";
+import { reorderCards, createCard, updateMemberRole } from "../../boards/[id]/actions";
 import { SwitchCamera } from "lucide-react";
 
 function MiniBoardPanel({ boardId, supabase, onClose, hasEditAccess, participants }: { boardId: string, supabase: any, onClose: () => void, hasEditAccess: boolean, participants: any[] }) {
@@ -167,7 +167,7 @@ function MiniBoardPanel({ boardId, supabase, onClose, hasEditAccess, participant
 
   const handleDragEnd = async (result: any) => {
     if (!hasEditAccess) return;
-    const { destination, source, draggableId } = result;
+    const { destination, source } = result;
 
     if (!destination) return;
     if (destination.droppableId === source.droppableId && destination.index === source.index) return;
@@ -185,7 +185,9 @@ function MiniBoardPanel({ boardId, supabase, onClose, hasEditAccess, participant
 
       const newClonedCards = clonedCards.map((c, idx) => ({ ...c, position: idx }));
       setLists(newLists.map(l => l.id === source.droppableId ? { ...l, board_cards: newClonedCards } : l));
-      await moveCard(draggableId, destination.droppableId, destination.index);
+      
+      const newCardIds = newClonedCards.map((c: any) => c.id);
+      await reorderCards(source.droppableId, newCardIds);
     } else {
       const sourceCards = Array.from(sourceList.board_cards) as any[];
       const destCards = Array.from(destList.board_cards) as any[];
@@ -201,7 +203,15 @@ function MiniBoardPanel({ boardId, supabase, onClose, hasEditAccess, participant
         if (l.id === destination.droppableId) return { ...l, board_cards: newDestCards };
         return l;
       }));
-      await moveCard(draggableId, destination.droppableId, destination.index);
+      
+      const sourceCardIds = newSourceCards.map((c: any) => c.id);
+      const destCardIds = newDestCards.map((c: any) => c.id);
+      await reorderCards(
+        source.droppableId,
+        sourceCardIds,
+        destination.droppableId,
+        destCardIds
+      );
     }
   };
 
@@ -320,9 +330,16 @@ function MiniBoardPanel({ boardId, supabase, onClose, hasEditAccess, participant
                             ref={provided.innerRef}
                             {...provided.draggableProps}
                             {...provided.dragHandleProps}
-                            className={`bg-white p-2.5 rounded-lg border border-gray-100 shadow-[0_1px_3px_rgba(0,0,0,0.02)] ${snapshot.isDragging ? "shadow-lg scale-[1.02] rotate-1 z-50 border-blue-200" : ""} ${!hasEditAccess ? "cursor-default" : ""}`}
+                            style={provided.draggableProps.style}
+                            className={clsx("mb-2 outline-none", snapshot.isDragging ? "z-50" : "")}
                           >
-                            <p className="text-[13px] font-medium text-gray-800 leading-snug">{card.title}</p>
+                            <div className={cn(
+                              "bg-white p-2.5 rounded-lg border border-gray-100 shadow-[0_1px_3px_rgba(0,0,0,0.02)] transition-all",
+                              snapshot.isDragging ? "shadow-lg scale-[1.02] rotate-1 border-blue-200" : "",
+                              !hasEditAccess ? "cursor-default" : ""
+                            )}>
+                              <p className="text-[13px] font-medium text-gray-800 leading-snug">{card.title}</p>
+                            </div>
                           </div>
                         )}
                       </Draggable>

@@ -4,24 +4,42 @@ import { createClient } from "@/utils/supabase/server";
 import { ChatGoogleGenerativeAI } from "@langchain/google-genai";
 import { HumanMessage } from "@langchain/core/messages";
 
-export async function moveCard(
-  cardId: string,
-  newListId: string,
-  newPosition: number,
+export async function reorderCards(
+  sourceListId: string,
+  sourceCardIds: string[],
+  destListId?: string,
+  destCardIds?: string[],
 ) {
   const supabase = await createClient();
 
-  // A real app would verify user permissions here (check board_members)
+  const updates: { id: string; list_id: string; position: number }[] = [];
 
-  const { error } = await supabase
-    .from("board_cards")
-    .update({
-      list_id: newListId,
-      position: newPosition,
-    })
-    .eq("id", cardId);
+  // Prepare updates for source list
+  sourceCardIds.forEach((id, index) => {
+    updates.push({
+      id,
+      list_id: sourceListId,
+      position: index,
+    });
+  });
 
-  if (error) return { error: error.message };
+  // Prepare updates for destination list if it's a cross-list move
+  if (destListId && destCardIds) {
+    destCardIds.forEach((id, index) => {
+      updates.push({
+        id,
+        list_id: destListId,
+        position: index,
+      });
+    });
+  }
+
+  const { error } = await supabase.from("board_cards").upsert(updates);
+
+  if (error) {
+    console.error("Reorder Error:", error);
+    return { error: error.message };
+  }
   return { success: true };
 }
 
